@@ -123,11 +123,19 @@ function getNumberOfGrowThreads(availableThreads: number, growThreadsPerWeaken: 
  * Identifies all servers, excepting "home", that we have root access to.
  */
 export function getPwndServers(ns: NS): string[] {
+    return getAllServers(ns)
+        .filter(hostname => ns.hasRootAccess(hostname))
+        .filter(hostname => hostname !== "home")
+}
+
+/**
+ * Identifies all servers in the game, including home.
+ */
+export function getAllServers(ns: NS): string[] {
     const seen: Set<string> = new Set()
     seen.add("home");
-    const queue: string[] = ["home"]
 
-    const pwndServers = ns.getPurchasedServers()
+    const queue: string[] = ["home"]
     while (queue.length) {
         const hostname = queue.shift()!;
         for (const neighbor of ns.scan(hostname)) {
@@ -137,12 +145,9 @@ export function getPwndServers(ns: NS): string[] {
             seen.add(neighbor)
             queue.push(neighbor)
         }
-        if (ns.hasRootAccess(hostname)) {
-            pwndServers.push(hostname)
-        }
     }
 
-    return pwndServers
+    return [...seen.values()]
 }
 
 /**
