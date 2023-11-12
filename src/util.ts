@@ -265,6 +265,31 @@ export function getTargetedScriptArgs(ns: NS): TargetedScriptArgs {
 }
 
 /**
+ * For scripts that perform a scan on multiple targets, they optionally may restrict the scan to a set of hostnames.
+ */
+export interface ScanScriptArgs {
+    targets?: string[]
+    printDetailedInfo: boolean
+}
+
+/**
+ * Parses the script arguments for the {@link ScanScriptArgs}.
+ */
+export function getScanScriptArgs(ns: NS): ScanScriptArgs {
+    const positionalArgs = ns.args
+        .filter(arg => isString(arg) && !arg.startsWith("--")) as string[];
+
+    const args: ScanScriptArgs = {
+        printDetailedInfo: ns.args.includes("--detail")
+    }
+    if (positionalArgs.length) {
+        args["targets"] = positionalArgs
+    }
+
+    return args
+}
+
+/**
  * Parses the script arguments for the presence of a flag that indicates a script should run only once.
  */
 export function shouldRunOnlyOnce(ns: NS): boolean {
