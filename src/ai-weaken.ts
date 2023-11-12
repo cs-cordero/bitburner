@@ -2,10 +2,8 @@ import { NS } from "@ns";
 import {
     allocateThreadsForScript,
     getNumberOfWeakenThreadsNeeded,
-    getOptimizedAllocation, getPrintFunc,
+    getPrintFunc,
     getPwndServers,
-    isString, Process,
-    pwndServers, waitUntilProcessesFinishes
 } from "/util";
 
 /**
