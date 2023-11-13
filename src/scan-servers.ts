@@ -34,6 +34,9 @@ export async function main(ns: NS): Promise<void> {
 
     print("Server vulnerability information")
     for (const datum of info) {
+        if (datum.reqHackingLevel - ns.getHackingLevel() > 100) {
+            continue
+        }
         const hostname = datum.hostname.padEnd(18)
         const reqLevel = datum.reqHackingLevel.toString().padStart(4)
         print(`    ${hostname} Hacking Level: ${reqLevel} Ports: ${datum.reqPorts}`)

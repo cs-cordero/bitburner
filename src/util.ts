@@ -53,6 +53,25 @@ export function formatPct(x: number): string {
 }
 
 /**
+ * Given a number of milliseconds, transform it into a human readable string.
+ */
+export function formatMs(x: number): string {
+    let seconds = Math.floor(x / 1000);
+    let minutes = Math.floor(x / 1000 / 60)
+    const hours = Math.floor(x / 1000 / 60 / 60);
+    if (hours > 0) {
+        minutes %= 60
+        seconds %= 60
+        return `${hours}h ${minutes}m ${seconds}s`
+    } else if (minutes > 0) {
+        seconds %= 60
+        return `${minutes}m ${seconds}s`
+    } else {
+        return `${seconds}s`
+    }
+}
+
+/**
  * Rounds a number to some number of decimal points.
  * Note that it doesn't force any trailing 0s, if you want to print this somewhere, you'll
  * want to use .toFixed(n).
@@ -72,43 +91,10 @@ export interface GrowWeakenAllocation {
 }
 
 /**
- * Determines an optimal distribution of grow- and weaken threads per host.
- */
-export function getOptimizedAllocation(ns: NS): GrowWeakenAllocation[] {
-    const ramCostPerThread = 1.80;  // max(mem grow.js, mem weaken.js)
-    const hostToMaxThreads: [string, number][] = [];
-    for (const hostname of pwndServers) {
-        hostToMaxThreads.push([hostname, Math.floor(ns.getServerMaxRam(hostname) / ramCostPerThread)])
-    }
-
-    hostToMaxThreads.sort((a, b) => b[1] - a[1])
-    const totalThreads = hostToMaxThreads.reduce((prev, current) => prev + current[1], 0);
-
-    let remainingGrowThreads = getNumberOfGrowThreads(totalThreads, 9);
-    let remainingWeakenThreads = totalThreads - remainingGrowThreads;
-    const allocation: GrowWeakenAllocation[] = []
-    while (hostToMaxThreads.length) {
-        const data = hostToMaxThreads.shift();
-        if (data == undefined) {
-            break;
-        }
-
-        const [hostname, hostThreads] = data;
-        const growThreads = Math.min(hostThreads, remainingGrowThreads);
-        const weakenThreads = Math.min(hostThreads - growThreads, remainingWeakenThreads);
-        allocation.push({ hostname, growThreads, weakenThreads });
-        remainingGrowThreads -= growThreads;
-        remainingWeakenThreads -= weakenThreads;
-    }
-
-    return allocation
-}
-
-/**
  * Determines the number of grow threads allowed given the availableThreads count and a ratio of
  * grow threads per weaken.
  */
-function getNumberOfGrowThreads(availableThreads: number, growThreadsPerWeaken: number): number {
+export function getNumberOfGrowThreads(availableThreads: number, growThreadsPerWeaken: number): number {
     let growThreads = 0;
     while (availableThreads > 0) {
         availableThreads -= 1; // remove 1 for weaken thread.
@@ -219,6 +205,8 @@ export async function waitUntilPidFinishes(ns: NS, pid: number): Promise<void> {
 export interface Process {
     pid: number;
     hostname: string;
+    threads: number;
+    target?: string;
 }
 
 /**
