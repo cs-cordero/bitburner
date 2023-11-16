@@ -1,6 +1,6 @@
 import { NS } from "@ns";
 import {
-    allocateThreadsForScript, getNumberOfGrowThreads,
+    allocateThreadsForScript, formatMs, getNumberOfGrowThreads,
     getPrintFunc,
     getPwndServers, isNumber, Process
 } from "/util";
@@ -96,9 +96,10 @@ export async function main(ns: NS): Promise<void> {
                 remainingThreads -= threads
             })
 
+            const expectedTime = formatMs(Math.max(ns.getWeakenTime(target), ns.getGrowTime(target)))
             const hostCount = new Set([...growProcsCreated, ...weakenProcsCreated].map(proc => proc.hostname)).size
             print(`[AI-GROW] Target ${target}: Orchestration information`)
-            print(`    Using ${threadsToUse} threads across ${hostCount} hosts.`)
+            print(`    Using ${threadsToUse} threads across ${hostCount} hosts. Expected completion in ${expectedTime}`)
         }
 
         await ns.sleep(10000);

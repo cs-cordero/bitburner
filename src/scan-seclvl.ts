@@ -33,7 +33,17 @@ export async function main(ns: NS): Promise<void> {
         data.push({ hostname, currentLevel, minLevel, growthRate, timeHack, timeGrow, timeWeaken })
     }
 
-    data.sort((a, b) => a.currentLevel - b.currentLevel);
+    data.sort((a, b) => {
+        const aMinimized = a.currentLevel === a.minLevel
+        const bMinimized = b.currentLevel === b.minLevel
+        if (aMinimized && !bMinimized) {
+            return 1
+        } else if (!aMinimized && bMinimized || aMinimized && bMinimized) {
+            return -1
+        } else {
+            return b.currentLevel - a.currentLevel
+        }
+    });
 
     print("Security Level Information")
     for (const datum of data) {
@@ -57,7 +67,8 @@ export async function main(ns: NS): Promise<void> {
             const padHostname = datum.hostname.padEnd(18)
             const padSecLevel = `${secLevel}`.padStart(7)
             const padMinLevel = `${datum.minLevel}`.padStart(2)
-            print(`\t${padHostname} ${padSecLevel} (Min: ${padMinLevel})`)
+            const suffix = secLevel === datum.minLevel ? "*" : ""
+            print(`\t${padHostname} ${padSecLevel} (Min: ${padMinLevel}) ${suffix}`)
         }
     }
 }

@@ -19,7 +19,7 @@ export function isNumber(x: unknown): x is number {
  * Rounds a number to the nearest billion, million, or thousand, with two decimals and adding
  * the appropriate suffix (if any): b, m, k.
  */
-export function formatNumber(x: number): string {
+export function formatNumber(x: number, includeDollar?: boolean): string {
     const BILLION = 1_000_000_000;
     const MILLION = 1_000_000;
     const THOUSAND = 1_000;
@@ -41,7 +41,9 @@ export function formatNumber(x: number): string {
         suffix = "";
     }
 
-    return `$${rounded_number.toFixed(2)}${suffix}`;
+    const prefix = (includeDollar ?? true) ? "$" : "";
+
+    return `${prefix}${rounded_number.toFixed(2)}${suffix}`;
 }
 
 /**
@@ -226,7 +228,12 @@ export async function waitUntilProcessesFinishes(ns: NS, processes: Process[]): 
 }
 
 export function getPrintFunc(ns: NS): (arg: string) => void {
-    return ns.args.includes("--silent") ? ns.print : ns.tprint;
+    return ns.args.includes("--silent")
+        ? ns.print
+        : (msg: string) => {
+            ns.tprint(msg)
+            ns.print(msg)
+        }
 }
 
 /**

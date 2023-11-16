@@ -14,6 +14,8 @@ interface MoneyInfo {
     maxAmount: number;
     growthParam: number;
     timeGrow: number;
+    hackChance: number;
+    expectedValue: number;
 }
 
 /**
@@ -33,7 +35,9 @@ export async function main(ns: NS): Promise<void> {
         const maxAmount = ns.getServerMaxMoney(hostname)
         const growthParam = ns.getServerGrowth(hostname)
         const timeGrow = ns.getGrowTime(hostname)
-        moneyInfo.push({ hostname, currentAmount, maxAmount, growthParam, timeGrow });
+        const hackChance = ns.hackAnalyzeChance(hostname)
+        const expectedValue = currentAmount * hackChance
+        moneyInfo.push({ hostname, currentAmount, maxAmount, growthParam, timeGrow, hackChance, expectedValue });
     }
 
     moneyInfo.sort((a, b) => b.currentAmount - a.currentAmount)
@@ -44,6 +48,8 @@ export async function main(ns: NS): Promise<void> {
         const current = formatNumber(datum.currentAmount);
         const max = formatNumber(datum.maxAmount);
         const pct = formatPct(datum.currentAmount / datum.maxAmount * 100);
+        const chancePct = formatPct(datum.hackChance * 100)
+        const ev = formatNumber(datum.expectedValue)
 
         let s = "    "
         s += `${hostname}:`.padEnd(18)
@@ -52,6 +58,10 @@ export async function main(ns: NS): Promise<void> {
         s += " / "
         s += pad(max)
         s += `(${pct}%)`.padStart(9)
+        s += " Chance: "
+        s += `${chancePct}%`.padStart(6)
+        s += " EV: "
+        s += pad(ev)
 
         if (args.printDetailedInfo) {
             const growthParam = datum.growthParam;

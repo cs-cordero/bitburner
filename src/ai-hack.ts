@@ -1,10 +1,5 @@
 import { NS } from "@ns";
-import {
-    allocateThreadsForScript, formatMs,
-    getNumberOfWeakenThreadsNeeded,
-    getPrintFunc,
-    getPwndServers, waitUntilPidFinishes,
-} from "/util";
+import { formatMs, getPrintFunc, getPwndServers, waitUntilPidFinishes, } from "/util";
 
 /**
  * Long-running process that launches big hack attacks at servers with maxed out money.
@@ -13,10 +8,9 @@ import {
 export async function main(ns: NS): Promise<void> {
     const print = getPrintFunc(ns);
     const memCost = ns.getScriptRam("hack.js")
-    // leave free around 10GB if its available.
+    // leave free around 10GB if it's available.
     const memFree = ns.getServerMaxRam(ns.getHostname()) - ns.getServerUsedRam(ns.getHostname()) - 10
     const threads = Math.floor(memFree / memCost);
-
 
     while (true) {
         const targets = getPwndServers(ns)
@@ -24,7 +18,11 @@ export async function main(ns: NS): Promise<void> {
             .filter(target => target !== "home")
             .filter(target => ns.getServerMoneyAvailable(target) >= ns.getServerMaxMoney(target))
             .filter(target => ns.getServerMoneyAvailable(target) > 0)
-        targets.sort((a, b) => ns.getServerMoneyAvailable(b) - ns.getServerMoneyAvailable(a))
+        targets.sort((a, b) => {
+            const evTargetA = ns.getServerMoneyAvailable(a) * ns.hackAnalyzeChance(a);
+            const evTargetB = ns.getServerMoneyAvailable(b) * ns.hackAnalyzeChance(b);
+            return evTargetB - evTargetA
+        })
 
         if (!targets.length) {
             print("[AI-HACK] No targets to hack.")
@@ -40,7 +38,7 @@ export async function main(ns: NS): Promise<void> {
 
             print(`[AI-HACK] Target ${target}: Using ${threads} threads. Expected completion in ${hackTime}...`)
             await waitUntilPidFinishes(ns, ns.exec("hack.js", ns.getHostname(), { threads }, target, threads, "--silent", "--once"))
-            print(`[AI-HACK] Target ${target}: Using ${threads} threads. Successful.`)
+            print(`[AI-HACK] Target ${target}: Using ${threads} threads. Completed.`)
             break;
         }
 

@@ -34,7 +34,7 @@ export async function main(ns: NS): Promise<void> {
 
     print("Server vulnerability information")
     for (const datum of info) {
-        if (datum.reqHackingLevel - ns.getHackingLevel() > 100) {
+        if (!ns.args.includes("--all") && datum.reqHackingLevel - ns.getHackingLevel() > 100) {
             continue
         }
         const hostname = datum.hostname.padEnd(18)
