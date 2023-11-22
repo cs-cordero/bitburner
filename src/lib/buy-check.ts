@@ -1,10 +1,40 @@
 import { NS } from "@ns";
-import { formatNumber } from "/util";
+import { formatNumber } from "/lib/util";
 
 /**
  * Scans the purchased servers and determines the highest RAM you can purchase with the buy.js script.
  */
-export async function main(ns: NS): Promise<void> {
+export function checkBuyServers(ns: NS) {
+  const buyDetails = analyzeBuyDetails(ns)
+  const {maximumReached, recommendedCost, recommendedRam, nextRam, nextCost, ramToServerCount } = buyDetails
+
+  if (maximumReached && recommendedCost === 0) {
+    ns.tprint("Maximum purchased server count and RAM achieved")
+  } else if (!maximumReached && recommendedCost === 0) {
+    ns.tprint("Cannot buy/purchase more servers or RAM at the moment")
+  } else {
+    const ramDescription = Object.entries(ramToServerCount)
+        .map(([ram, count]) => `${count} hosts at ${ram} RAM`)
+        .join(", ")
+    ns.tprint(ramDescription)
+    ns.tprint(`Can buy/upgrade to ${recommendedRam} RAM at cost ${formatNumber(recommendedCost)}`)
+  }
+
+  if (!maximumReached) {
+    ns.tprint(`\tThe next RAM (${nextRam}) will cost ${formatNumber(nextCost)}`)
+  }
+}
+
+interface BuyDetails {
+  maximumReached: boolean
+  recommendedCost: number
+  recommendedRam: number
+  nextRam: number
+  nextCost: number
+  ramToServerCount: { [ram: number]: number }
+}
+
+export function analyzeBuyDetails(ns: NS): BuyDetails {
   const money = ns.getPlayer().money
 
   const maxCountServersToPurchase = ns.getPurchasedServerLimit();
@@ -52,21 +82,12 @@ export async function main(ns: NS): Promise<void> {
     ramToServerCount[ram] += 1
   })
 
-  if (maximumReached && costToReport === 0) {
-    ns.tprint("Maximum purchased server count and RAM achieved")
-  } else if (!maximumReached && costToReport === 0) {
-    ns.tprint("Cannot buy/purchase more servers or RAM at the moment")
-  } else {
-    // (!maximumReached && costToReport > 0) || (maximumReached && costToReport === 0)
-
-    const ramDescription = Object.entries(ramToServerCount)
-        .map(([ram, count]) => `${count} hosts at ${ram} RAM`)
-        .join(", ")
-    ns.tprint(ramDescription)
-    ns.tprint(`Can buy/upgrade to ${confirmedRam} RAM at cost ${formatNumber(costToReport)}`)
-  }
-
-  if (!maximumReached) {
-    ns.tprint(`\tThe next RAM (${ramToEvaluate}) will cost ${formatNumber(lastCostEvaluated)}`)
+  return {
+    maximumReached,
+    recommendedCost: costToReport,
+    recommendedRam: confirmedRam,
+    nextRam: ramToEvaluate,
+    nextCost: lastCostEvaluated,
+    ramToServerCount
   }
 }

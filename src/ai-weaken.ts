@@ -1,10 +1,12 @@
 import { NS } from "@ns";
 import {
-    allocateThreadsForScript, formatMs,
+    allocateThreadsForScript,
+    formatMs,
     getNumberOfWeakenThreadsNeeded,
     getPrintFunc,
-    getPwndServers, Process,
-} from "/util";
+    getPwndServers,
+    Process,
+} from "/lib/util";
 
 /**
  * Long-running process that tries to keep all pwned servers at their minimum security level.
@@ -24,15 +26,22 @@ export async function main(ns: NS): Promise<void> {
         procsToDelete.forEach(proc => targeted.delete(proc))
 
         for (const target of getPwndServers(ns)) {
-            const alreadyTargeted = new Set([...targeted.values()].map(proc => proc.target!))
-            if (alreadyTargeted.has(target)) {
+            let weakenThreadsNeeded = getNumberOfWeakenThreadsNeeded(ns, target);
+
+            const weakenThreadsExecuting = [...targeted]
+                .filter(proc => proc.target === target)
+                .map(proc => proc.threads)
+                .reduce((a, b) => a + b, 0)
+
+            weakenThreadsNeeded = Math.max(0, weakenThreadsNeeded - weakenThreadsExecuting)
+
+            if (weakenThreadsNeeded <= 0) {
                 continue;
             }
             if (ns.getPurchasedServers().includes(target)) {
                 continue;
             }
 
-            const weakenThreadsNeeded = getNumberOfWeakenThreadsNeeded(ns, target);
             const weakenAlloc = allocateThreadsForScript(ns, "weaken.js", weakenThreadsNeeded);
             const totalThreads = weakenAlloc.map(alloc => alloc.threads).reduce((a, b) => a + b, 0);
             const weakenTime = formatMs(ns.getWeakenTime(target))
@@ -56,8 +65,10 @@ export async function main(ns: NS): Promise<void> {
                 const counts = weakenAlloc.map(alloc => `${alloc.hostname} ${alloc.threads}`).join(", ")
                 print(`\t${counts}`)
             }
+
+            await ns.sleep(500)
         }
 
-        await ns.sleep(10000);
+        await ns.sleep(1000)
     }
 }

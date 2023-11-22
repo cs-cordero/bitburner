@@ -20,6 +20,8 @@ export function isNumber(x: unknown): x is number {
  * the appropriate suffix (if any): b, m, k.
  */
 export function formatNumber(x: number, includeDollar?: boolean): string {
+    const QUADRILLION = 1_000_000_000_000_000;
+    const TRILLION = 1_000_000_000_000;
     const BILLION = 1_000_000_000;
     const MILLION = 1_000_000;
     const THOUSAND = 1_000;
@@ -27,7 +29,13 @@ export function formatNumber(x: number, includeDollar?: boolean): string {
     let rounded_number: number;
     let suffix: string;
 
-    if (x >= BILLION) {
+    if (x >= QUADRILLION) {
+        rounded_number = Math.round(x / QUADRILLION * 100) / 100;
+        suffix = "t";
+    } else if (x >= TRILLION) {
+        rounded_number = Math.round(x / TRILLION * 100) / 100;
+        suffix = "t";
+    } else if (x >= BILLION) {
         rounded_number = Math.round(x / BILLION * 100) / 100;
         suffix = "b";
     } else if (x >= MILLION) {
@@ -160,6 +168,9 @@ export function allocateThreadsForScript(ns: NS, scriptName: string, neededThrea
         if (remainingThreadCount === 0) {
             break;
         }
+        if (!ns.fileExists(scriptName, hostname)) {
+            continue
+        }
 
         const maxRam = ns.getServerMaxRam(hostname)
         const usedRam = ns.getServerUsedRam(hostname)
@@ -192,6 +203,10 @@ export function getNumberOfWeakenThreadsNeeded(ns: NS, hostname: string): number
  * Given a PID, will wait second-by-second until it finishes.
  */
 export async function waitUntilPidFinishes(ns: NS, pid: number): Promise<void> {
+    if (pid === 0) {
+        throw new Error("Pid was 0. It must have failed")
+    }
+
     let elapsedSeconds = 0;
     while (ns.isRunning(pid)) {
         ns.print(`Waiting for pid ${pid} to finish. Elapsed seconds ${elapsedSeconds}s`)
@@ -227,7 +242,7 @@ export async function waitUntilProcessesFinishes(ns: NS, processes: Process[]): 
     ns.print(`Processes ${processes} completed after ${elapsedSeconds} seconds.`)
 }
 
-export function getPrintFunc(ns: NS): (arg: string) => void {
+export function getPrintFunc(ns: NS): (arg: any) => void {
     return ns.args.includes("--silent")
         ? ns.print
         : (msg: string) => {
@@ -290,8 +305,32 @@ export function getScanScriptArgs(ns: NS): ScanScriptArgs {
 }
 
 /**
+ * Determines how many free threads there are to run hack(), grow(), or weaken(), on a host.
+ * @param ns
+ */
+export function getFreeThreadCount(ns: NS, host?: string): number {
+    const hostname = host ?? "home"
+    const maxRam = ns.getServerMaxRam(hostname)
+    const usedRam = ns.getServerUsedRam(hostname)
+    const freeRam = maxRam - usedRam
+    const memCost = Math.max(
+        ns.getScriptRam("hack.js", "home"), // home has the canonical version of the script
+        ns.getScriptRam("grow.js", "home"), // home has the canonical version of the script
+        ns.getScriptRam("weaken.js", "home") // home has the canonical version of the script
+    )
+    return Math.floor(freeRam / memCost)
+}
+
+/**
  * Parses the script arguments for the presence of a flag that indicates a script should run only once.
  */
 export function shouldRunOnlyOnce(ns: NS): boolean {
     return ns.args.includes("--once")
+}
+
+/**
+ * Returns whether the Formulas API is accessible to us.
+ */
+export function formulasApiActive(ns: NS): boolean {
+    return ns.fileExists("Formulas.exe", "home")
 }

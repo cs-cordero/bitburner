@@ -1,14 +1,5 @@
 import { NS } from "@ns";
-import {
-    formatMs,
-    formatNumber,
-    getPrintFunc,
-    getTargetedScriptArgs,
-    isNumber,
-    isString,
-    round,
-    shouldRunOnlyOnce
-} from "/util";
+import { formatMs, formatNumber, getPrintFunc, getTargetedScriptArgs, shouldRunOnlyOnce } from "/lib/util";
 
 /**
  * Runs hack() on a target server.

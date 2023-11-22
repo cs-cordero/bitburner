@@ -1,5 +1,5 @@
 import { NS } from "@ns";
-import { getPrintFunc, getPwndServers } from "/util";
+import { getPrintFunc, getPwndServers } from "/lib/util";
 
 /**
  * Orders all pwnd servers to killall processes.  This excludes "home".

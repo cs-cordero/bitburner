@@ -1,5 +1,5 @@
 import { NS } from "@ns";
-import { getAllServers, getPrintFunc, getScanScriptArgs } from "/util";
+import { getAllServers, getPrintFunc, getScanScriptArgs } from "/lib/util";
 
 interface ServerInfo {
     hostname: string;

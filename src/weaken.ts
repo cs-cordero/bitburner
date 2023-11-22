@@ -1,5 +1,5 @@
 import { NS } from "@ns";
-import { formatMs, getPrintFunc, getTargetedScriptArgs, round, shouldRunOnlyOnce } from "/util";
+import { formatMs, getPrintFunc, getTargetedScriptArgs, round, shouldRunOnlyOnce } from "/lib/util";
 
 /**
  * Runs weaken() on a target server.

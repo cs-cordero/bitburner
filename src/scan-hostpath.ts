@@ -1,6 +1,9 @@
 import { NS } from "@ns";
-import { getTargetedScriptArgs } from "/util";
+import { getTargetedScriptArgs } from "/lib/util";
 
+/**
+ * Prints the server path to reach a target.
+ */
 export async function main(ns: NS): Promise<void> {
     const args = getTargetedScriptArgs(ns)
 

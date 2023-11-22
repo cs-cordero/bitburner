@@ -1,16 +1,18 @@
 import { NS } from "@ns";
-import { getPrintFunc, getPwndServers, getTargetedScriptArgs, shouldRunOnlyOnce } from "/util";
+import { formatMs, getPrintFunc, getPwndServers, getTargetedScriptArgs, shouldRunOnlyOnce } from "/lib/util";
 
 /**
- * Orders all pwned servers to use as much capacity as they can to weaken a single target.
+ * Orders the fleet to grow() a single target.
  */
 export async function main(ns: NS): Promise<void> {
     const args = getTargetedScriptArgs(ns)
     const print = getPrintFunc(ns)
 
     for (const hostname of getPwndServers(ns)) {
-        const ram = ns.getServerMaxRam(hostname);
         const mem = ns.getScriptRam("grow.js", hostname);
+        const maxRam = ns.getServerMaxRam(hostname);
+        const usedRam = ns.getServerUsedRam(hostname);
+        const ram = maxRam - usedRam
         const threads = Math.floor(ram / mem);
 
         if (threads > 0) {
@@ -19,8 +21,11 @@ export async function main(ns: NS): Promise<void> {
                 execArgs.push("--once")
             }
 
+            const growTime = ns.getGrowTime(args.target)
             const pid = ns.exec("grow.js", hostname, { threads }, ...execArgs);
-            print(`Started grow.js on ${hostname} with PID ${pid} with ${threads} threads.`)
+            if (pid !== 0) {
+                print(`Started grow.js on ${hostname} with PID ${pid} with ${threads} threads. (${formatMs(growTime)})`)
+            }
         }
     }
 }

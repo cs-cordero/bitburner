@@ -1,5 +1,5 @@
 import { NS } from "@ns";
-import { getPwndServers } from "/util";
+import { getPwndServers } from "/lib/util";
 
 /**
  * Syncs all the scripts on the home computer to all the pwnd servers.
@@ -15,6 +15,7 @@ export async function main(ns: NS): Promise<void> {
             // remove files that dont exist on home
             ns.ls(pwndServer)
                 .filter(fileName => !homeFiles.includes(fileName))
+                .filter(fileName => fileName.endsWith(".js"))
                 .forEach(fileName => ns.rm(fileName, pwndServer));
         }
 
