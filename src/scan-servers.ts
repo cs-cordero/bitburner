@@ -1,10 +1,10 @@
-import { NS } from "@ns";
-import { getAllServers, getPrintFunc, getScanScriptArgs } from "/lib/util";
+import { NS } from "@ns"
+import { getAllServers, getPrintFunc, getScanScriptArgs } from "/lib/util"
 
 interface ServerInfo {
-    hostname: string;
-    reqHackingLevel: number;
-    reqPorts: number;
+    hostname: string
+    reqHackingLevel: number
+    reqPorts: number
 }
 
 /**
@@ -13,15 +13,16 @@ interface ServerInfo {
  */
 export async function main(ns: NS): Promise<void> {
     const args = getScanScriptArgs(ns)
-    const hostnamesToEvaluate = args.targets ?? getAllServers(ns)
-        .filter(hostname => !ns.hasRootAccess(hostname))
+    const hostnamesToEvaluate =
+        args.targets ??
+        getAllServers(ns).filter((hostname) => !ns.hasRootAccess(hostname))
     const print = getPrintFunc(ns)
 
     const info: ServerInfo[] = []
     for (const hostname of hostnamesToEvaluate) {
         const reqHackingLevel = ns.getServerRequiredHackingLevel(hostname)
         const reqPorts = ns.getServerNumPortsRequired(hostname)
-        info.push( { hostname, reqHackingLevel, reqPorts })
+        info.push({ hostname, reqHackingLevel, reqPorts })
     }
 
     info.sort((a, b) => {
@@ -34,11 +35,16 @@ export async function main(ns: NS): Promise<void> {
 
     print("Server vulnerability information")
     for (const datum of info) {
-        if (!ns.args.includes("--all") && datum.reqHackingLevel - ns.getHackingLevel() > 100) {
+        if (
+            !ns.args.includes("--all") &&
+            datum.reqHackingLevel - ns.getHackingLevel() > 100
+        ) {
             continue
         }
         const hostname = datum.hostname.padEnd(18)
         const reqLevel = datum.reqHackingLevel.toString().padStart(4)
-        print(`    ${hostname} Hacking Level: ${reqLevel} Ports: ${datum.reqPorts}`)
+        print(
+            `    ${hostname} Hacking Level: ${reqLevel} Ports: ${datum.reqPorts}`
+        )
     }
 }

@@ -1,4 +1,4 @@
-import { NS } from "@ns";
+import { NS } from "@ns"
 
 /**
  * Algorithmic Stock Trader I

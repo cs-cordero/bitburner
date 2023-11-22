@@ -1,4 +1,4 @@
-import { NS } from "@ns";
+import { NS } from "@ns"
 
 /**
  * Sanitize Parentheses in Expression
@@ -8,29 +8,38 @@ export function sanitizeParentheses(ns: NS, input: any): string {
 
     const potentialFixes = fix(ns, original, 0, [], 0, 0)
     const minRemovals = potentialFixes
-        .map(fix => fix.removals)
+        .map((fix) => fix.removals)
         .reduce((a, b) => Math.min(a, b))
 
     const fixes = potentialFixes
-        .filter(fix => fix.removals === minRemovals)
-        .map(fix => fix.s)
-        .map(fix => `"${fix.toString()}"`)
+        .filter((fix) => fix.removals === minRemovals)
+        .map((fix) => fix.s)
+        .map((fix) => `"${fix.toString()}"`)
     const dedupedFixes = [...new Set(fixes)].join(",")
     return `[${dedupedFixes}]`
 }
 
 interface FixedParentheses {
-    s: string,
+    s: string
     removals: number
 }
 
-function fix(ns: NS, s: string[], index: number, fixed: string[], openCount: number, removals: number): FixedParentheses[] {
+function fix(
+    ns: NS,
+    s: string[],
+    index: number,
+    fixed: string[],
+    openCount: number,
+    removals: number
+): FixedParentheses[] {
     if (index === s.length) {
         if (openCount === 0) {
-            return [{
-                s: fixed.join(""),
-                removals
-            }]
+            return [
+                {
+                    s: fixed.join(""),
+                    removals,
+                },
+            ]
         } else {
             return []
         }
@@ -44,13 +53,29 @@ function fix(ns: NS, s: string[], index: number, fixed: string[], openCount: num
 
     if (!mustSkip) {
         // remove the character
-        result.push(...fix(ns, s, index + 1, [...fixed], openCount, removals + 1))
+        result.push(
+            ...fix(ns, s, index + 1, [...fixed], openCount, removals + 1)
+        )
     }
 
     if (!mustRemove) {
-        const newOpenCount = currentChar === "(" ? openCount + 1 : currentChar === ")" ? openCount - 1 : openCount
+        const newOpenCount =
+            currentChar === "("
+                ? openCount + 1
+                : currentChar === ")"
+                  ? openCount - 1
+                  : openCount
         // keep the character
-        result.push(...fix(ns, s, index + 1, [...fixed, s[index]], newOpenCount, removals))
+        result.push(
+            ...fix(
+                ns,
+                s,
+                index + 1,
+                [...fixed, s[index]],
+                newOpenCount,
+                removals
+            )
+        )
     }
 
     return result

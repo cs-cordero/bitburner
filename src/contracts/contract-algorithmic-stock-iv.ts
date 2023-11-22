@@ -1,4 +1,4 @@
-import { NS } from "@ns";
+import { NS } from "@ns"
 
 /**
  * Algorithmic Stock Trader IV
@@ -11,7 +11,7 @@ export function algorithmicStockTraderIV(ns: NS, input: any): string {
         // buy
         for (let n = 0; n < prices.length; n++) {
             if (n > 0) {
-                dp[n] = Math.max(dp[n-1], dp[n] - prices[n])
+                dp[n] = Math.max(dp[n - 1], dp[n] - prices[n])
             } else {
                 dp[n] = dp[n] - prices[n]
             }
@@ -20,12 +20,11 @@ export function algorithmicStockTraderIV(ns: NS, input: any): string {
         // sell
         for (let n = 0; n < prices.length; n++) {
             if (n > 0) {
-                dp[n] = Math.max(dp[n-1], dp[n] + prices[n])
+                dp[n] = Math.max(dp[n - 1], dp[n] + prices[n])
             } else {
                 dp[n] = dp[n] + prices[n]
             }
         }
-
     }
 
     return dp[dp.length - 1].toString()

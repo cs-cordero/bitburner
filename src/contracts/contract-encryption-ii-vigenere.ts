@@ -1,4 +1,4 @@
-import { NS } from "@ns";
+import { NS } from "@ns"
 
 /**
  * Encryption II: Vigenère Cipher
@@ -28,5 +28,7 @@ const LOWEST_CODE = "A".charCodeAt(0)
 function vigenere(leftChar: string, rightChar: string): string {
     const leftCharCode = leftChar.toUpperCase().charCodeAt(0) - LOWEST_CODE
     const rightCharCode = rightChar.toUpperCase().charCodeAt(0) - LOWEST_CODE
-    return String.fromCharCode((leftCharCode + rightCharCode) % 26 + LOWEST_CODE)
+    return String.fromCharCode(
+        ((leftCharCode + rightCharCode) % 26) + LOWEST_CODE
+    )
 }

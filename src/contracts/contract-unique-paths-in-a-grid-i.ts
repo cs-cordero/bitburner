@@ -1,4 +1,4 @@
-import { NS } from "@ns";
+import { NS } from "@ns"
 
 /**
  * Unique Paths in a Grid I
@@ -14,7 +14,6 @@ export function uniquePathsInAGridI(ns: NS, input: any): string {
         const newRow = []
         for (let col = 0; col < cols; col++) {
             newRow.push(0)
-
         }
         dp.push(newRow)
     }

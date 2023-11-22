@@ -1,4 +1,4 @@
-import { NS } from "@ns";
+import { NS } from "@ns"
 
 /**
  * HammingCodes: Encoded Binary to Integer
@@ -6,11 +6,11 @@ import { NS } from "@ns";
 export function hammingCodesEncodedToInteger(ns: NS, input: any): string {
     const raw = input as string
     const structure = determineHammingCodeStructure(raw)
-    const numbers = raw.split("").map(num => parseInt(num))
+    const numbers = raw.split("").map((num) => parseInt(num))
 
     const parity = numbers
         .map((number, i) => [number, i])
-        .filter(([number, ]) => number === 1)
+        .filter(([number]) => number === 1)
         .map(([, i]) => i)
         .reduce((a, b) => a ^ b)
 
@@ -20,7 +20,7 @@ export function hammingCodesEncodedToInteger(ns: NS, input: any): string {
 
     const dataAsBinary = numbers
         .filter((num, i) => structure.dataBits.includes(i))
-        .map(num => num.toString())
+        .map((num) => num.toString())
         .join("")
     const data = parseInt(dataAsBinary, 2)
     return data.toString()
@@ -32,7 +32,9 @@ interface HammingCodeStructure {
     dataBits: number[]
 }
 
-function determineHammingCodeStructure(binaryString: string): HammingCodeStructure {
+function determineHammingCodeStructure(
+    binaryString: string
+): HammingCodeStructure {
     const dataBits = []
     const parityBits = []
 
@@ -49,6 +51,6 @@ function determineHammingCodeStructure(binaryString: string): HammingCodeStructu
     return {
         bitCount: binaryString.length,
         parityBits,
-        dataBits
+        dataBits,
     }
 }

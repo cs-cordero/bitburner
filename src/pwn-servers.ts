@@ -1,5 +1,5 @@
-import { NS } from "@ns";
-import { getAllServers, getPrintFunc, getScanScriptArgs } from "/lib/util";
+import { NS } from "@ns"
+import { getAllServers, getPrintFunc, getScanScriptArgs } from "/lib/util"
 
 /**
  * Runs NUKE.exe on any servers for which we can pwn.
@@ -15,19 +15,26 @@ export async function main(ns: NS): Promise<void> {
     }
 
     for (const hostname of hostnames) {
-        programs.forEach(program => program(hostname))
+        programs.forEach((program) => program(hostname))
         ns.nuke(hostname)
         print(`${hostname} has been pwned!`)
     }
 }
 
 export function getNukableHosts(ns: NS) {
-    const programs = getVulnerabilityPrograms((ns))
+    const programs = getVulnerabilityPrograms(ns)
 
     return getAllServers(ns)
-        .filter(hostname => !ns.hasRootAccess(hostname)) // we don't have root access to it yet
-        .filter(hostname => ns.getServerRequiredHackingLevel(hostname) <= ns.getHackingLevel()) // we can hack it
-        .filter(hostname => ns.getServerNumPortsRequired(hostname) <= programs.length) // we can open enough ports
+        .filter((hostname) => !ns.hasRootAccess(hostname)) // we don't have root access to it yet
+        .filter(
+            (hostname) =>
+                ns.getServerRequiredHackingLevel(hostname) <=
+                ns.getHackingLevel()
+        ) // we can hack it
+        .filter(
+            (hostname) =>
+                ns.getServerNumPortsRequired(hostname) <= programs.length
+        ) // we can open enough ports
 }
 
 function getVulnerabilityPrograms(ns: NS) {

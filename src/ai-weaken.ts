@@ -1,4 +1,4 @@
-import { NS } from "@ns";
+import { NS } from "@ns"
 import {
     allocateThreadsForScript,
     formatMs,
@@ -6,16 +6,16 @@ import {
     getPrintFunc,
     getPwndServers,
     Process,
-} from "/lib/util";
+} from "/lib/util"
 
 /**
  * Long-running process that tries to keep all pwned servers at their minimum security level.
  * Distributes load to pwned servers based using a thread allocation.
  */
 export async function main(ns: NS): Promise<void> {
-    const print = getPrintFunc(ns);
+    const print = getPrintFunc(ns)
 
-    const targeted: Set<Process> = new Set();
+    const targeted: Set<Process> = new Set()
     while (true) {
         const procsToDelete = []
         for (const proc of targeted) {
@@ -23,46 +23,67 @@ export async function main(ns: NS): Promise<void> {
                 procsToDelete.push(proc)
             }
         }
-        procsToDelete.forEach(proc => targeted.delete(proc))
+        procsToDelete.forEach((proc) => targeted.delete(proc))
 
         for (const target of getPwndServers(ns)) {
-            let weakenThreadsNeeded = getNumberOfWeakenThreadsNeeded(ns, target);
+            let weakenThreadsNeeded = getNumberOfWeakenThreadsNeeded(ns, target)
 
             const weakenThreadsExecuting = [...targeted]
-                .filter(proc => proc.target === target)
-                .map(proc => proc.threads)
+                .filter((proc) => proc.target === target)
+                .map((proc) => proc.threads)
                 .reduce((a, b) => a + b, 0)
 
-            weakenThreadsNeeded = Math.max(0, weakenThreadsNeeded - weakenThreadsExecuting)
+            weakenThreadsNeeded = Math.max(
+                0,
+                weakenThreadsNeeded - weakenThreadsExecuting
+            )
 
             if (weakenThreadsNeeded <= 0) {
-                continue;
+                continue
             }
             if (ns.getPurchasedServers().includes(target)) {
-                continue;
+                continue
             }
 
-            const weakenAlloc = allocateThreadsForScript(ns, "weaken.js", weakenThreadsNeeded);
-            const totalThreads = weakenAlloc.map(alloc => alloc.threads).reduce((a, b) => a + b, 0);
+            const weakenAlloc = allocateThreadsForScript(
+                ns,
+                "weaken.js",
+                weakenThreadsNeeded
+            )
+            const totalThreads = weakenAlloc
+                .map((alloc) => alloc.threads)
+                .reduce((a, b) => a + b, 0)
             const weakenTime = formatMs(ns.getWeakenTime(target))
 
             weakenAlloc
-                .map(({ hostname, scriptName, threads}) => {
-                    const pid = ns.exec(scriptName, hostname, { threads }, target, threads, "--silent", "--once")
+                .map(({ hostname, scriptName, threads }) => {
+                    const pid = ns.exec(
+                        scriptName,
+                        hostname,
+                        { threads },
+                        target,
+                        threads,
+                        "--silent",
+                        "--once"
+                    )
                     const proc: Process = {
                         pid,
                         hostname,
                         threads,
-                        target
+                        target,
                     }
                     return proc
                 })
-                .forEach(proc => targeted.add(proc))
+                .forEach((proc) => targeted.add(proc))
 
             if (weakenAlloc.length) {
                 print(`[AI-WEAKEN] Target ${target}: Orchestration information`)
-                print(`\tUsing ${totalThreads} threads across ${weakenAlloc.length} hosts. Expected completion in ${weakenTime}...`)
-                const counts = weakenAlloc.map(alloc => `${alloc.hostname} ${alloc.threads}`).join(", ")
+                print(
+                    `\tUsing ${totalThreads} threads across ${weakenAlloc.length} hosts. Expected completion in ${weakenTime}...`
+                )
+                const counts = weakenAlloc
+                    .map((alloc) => `${alloc.hostname} ${alloc.threads}`)
+                    .join(", ")
                 print(`\t${counts}`)
             }
 

@@ -1,5 +1,10 @@
-import { NS } from "@ns";
-import { formatMs, getPrintFunc, getPwndServers, getScanScriptArgs } from "/lib/util";
+import { NS } from "@ns"
+import {
+    formatMs,
+    getPrintFunc,
+    getPwndServers,
+    getScanScriptArgs,
+} from "/lib/util"
 
 /**
  * Very early game dedicating 1000 threads to weaken each server from the home server
@@ -9,9 +14,15 @@ export async function main(ns: NS): Promise<void> {
     const args = getScanScriptArgs(ns)
     const print = getPrintFunc(ns)
 
-    const hostsNeedSapping = args.targets ?? getPwndServers(ns)
-        .filter(hostname => ns.getServerSecurityLevel(hostname) > ns.getServerMinSecurityLevel(hostname) + 1)
-        .filter(hostname => !hostname.startsWith("home"))
+    const hostsNeedSapping =
+        args.targets ??
+        getPwndServers(ns)
+            .filter(
+                (hostname) =>
+                    ns.getServerSecurityLevel(hostname) >
+                    ns.getServerMinSecurityLevel(hostname) + 1
+            )
+            .filter((hostname) => !hostname.startsWith("home"))
 
     const host = ns.getHostname()
     const free = ns.getServerMaxRam(host) - ns.getServerUsedRam(host)
@@ -22,7 +33,13 @@ export async function main(ns: NS): Promise<void> {
 
     for (const hostname of hostsNeedSapping) {
         const weakenTime = ns.getWeakenTime(hostname)
-        const pid = ns.run("weaken.js", { threads: threadsPerSapHost }, hostname, threadsPerSapHost, "--once")
+        const pid = ns.run(
+            "weaken.js",
+            { threads: threadsPerSapHost },
+            hostname,
+            threadsPerSapHost,
+            "--once"
+        )
         print(`Sapping from ${hostname} PID ${pid} (${formatMs(weakenTime)})`)
         await ns.sleep(100)
     }

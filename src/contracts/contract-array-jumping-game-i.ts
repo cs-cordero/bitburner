@@ -1,5 +1,5 @@
-import { NS } from "@ns";
-import { arrayJumpingGameII } from "/src/contracts/contract-array-jumping-game-ii";
+import { NS } from "@ns"
+import { arrayJumpingGameII } from "/contracts/contract-array-jumping-game-ii"
 
 /**
  * Array Jumping Game I

@@ -1,6 +1,6 @@
-import { NS } from "@ns";
+import { NS } from "@ns"
 
-interface Point{
+interface Point {
     row: number
     col: number
 }
@@ -15,7 +15,7 @@ export function shortestPathInAGrid(ns: NS, input: any): string {
 
     const seen: Set<string> = new Set()
     seen.add("0x0")
-    const queue: ([Point, string])[] = [[{ row: 0, col: 0 }, ""]]
+    const queue: [Point, string][] = [[{ row: 0, col: 0 }, ""]]
     let i = 0
     while (queue.length) {
         const current = queue.shift()!
@@ -32,19 +32,35 @@ export function shortestPathInAGrid(ns: NS, input: any): string {
         const left: Point = { row, col: col - 1 }
         const right: Point = { row, col: col + 1 }
 
-        if (isValidPoint(up, rows, cols) && graph[up.row][up.col] !== 1 && !seen.has(toString(up))) {
+        if (
+            isValidPoint(up, rows, cols) &&
+            graph[up.row][up.col] !== 1 &&
+            !seen.has(toString(up))
+        ) {
             seen.add(toString(up))
             queue.push([up, `${path}U`])
         }
-        if (isValidPoint(down, rows, cols) && graph[down.row][down.col] !== 1 && !seen.has(toString(down))) {
+        if (
+            isValidPoint(down, rows, cols) &&
+            graph[down.row][down.col] !== 1 &&
+            !seen.has(toString(down))
+        ) {
             seen.add(toString(down))
             queue.push([down, `${path}D`])
         }
-        if (isValidPoint(left, rows, cols) && graph[left.row][left.col] !== 1 && !seen.has(toString(left))) {
+        if (
+            isValidPoint(left, rows, cols) &&
+            graph[left.row][left.col] !== 1 &&
+            !seen.has(toString(left))
+        ) {
             seen.add(toString(left))
             queue.push([left, `${path}L`])
         }
-        if (isValidPoint(right, rows, cols) && graph[right.row][right.col] !== 1 && !seen.has(toString(right))) {
+        if (
+            isValidPoint(right, rows, cols) &&
+            graph[right.row][right.col] !== 1 &&
+            !seen.has(toString(right))
+        ) {
             seen.add(toString(right))
             queue.push([right, `${path}R`])
         }

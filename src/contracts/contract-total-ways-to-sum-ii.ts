@@ -1,4 +1,4 @@
-import { NS } from "@ns";
+import { NS } from "@ns"
 
 /**
  * Total Ways to Sum II
@@ -10,7 +10,7 @@ export function totalWaysToSumII(ns: NS, input: any): string {
     numbers.sort((a, b) => a - b)
 
     for (const number of numbers) {
-        for (let right = 0 ; right < dp.length; right++) {
+        for (let right = 0; right < dp.length; right++) {
             const left = right - number
             if (left < 0) {
                 continue

@@ -1,4 +1,4 @@
-import { NS } from "@ns";
+import { NS } from "@ns"
 
 /**
  * Algorithmic Stock Trader II
@@ -10,7 +10,7 @@ export function algorithmicStockTraderII(ns: NS, input: any): string {
     let buyPrice = prices[0]
     let unrealizedGain = 0
     for (let i = 1; i < prices.length; i++) {
-        const priceIncreasing = prices[i] >= prices[i-1]
+        const priceIncreasing = prices[i] >= prices[i - 1]
         if (priceIncreasing) {
             unrealizedGain = Math.max(unrealizedGain, prices[i] - buyPrice)
         } else {

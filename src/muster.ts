@@ -1,5 +1,11 @@
-import { NS } from "@ns";
-import { formatMs, getPrintFunc, getPwndServers, getScanScriptArgs, waitUntilPidFinishes } from "/lib/util";
+import { NS } from "@ns"
+import {
+    formatMs,
+    getPrintFunc,
+    getPwndServers,
+    getScanScriptArgs,
+    waitUntilPidFinishes,
+} from "/lib/util"
 
 /**
  * Very early game dedicating 1000 threads to grow each server from the home server
@@ -8,11 +14,21 @@ export async function main(ns: NS): Promise<void> {
     const args = getScanScriptArgs(ns)
     const print = getPrintFunc(ns)
 
-    const hostsNeedMustering = args.targets ?? getPwndServers(ns)
-        .filter(hostname => ns.getServerSecurityLevel(hostname) <= ns.getServerMinSecurityLevel(hostname) + 1)
-        .filter(hostname => ns.getServerMoneyAvailable(hostname) < ns.getServerMaxMoney(hostname))
-        .filter(hostname => ns.getServerMaxMoney(hostname) > 0)
-        .filter(hostname => !hostname.startsWith("home"))
+    const hostsNeedMustering =
+        args.targets ??
+        getPwndServers(ns)
+            .filter(
+                (hostname) =>
+                    ns.getServerSecurityLevel(hostname) <=
+                    ns.getServerMinSecurityLevel(hostname) + 1
+            )
+            .filter(
+                (hostname) =>
+                    ns.getServerMoneyAvailable(hostname) <
+                    ns.getServerMaxMoney(hostname)
+            )
+            .filter((hostname) => ns.getServerMaxMoney(hostname) > 0)
+            .filter((hostname) => !hostname.startsWith("home"))
 
     const host = ns.getHostname()
     const free = ns.getServerMaxRam(host) - ns.getServerUsedRam(host)
@@ -29,10 +45,20 @@ export async function main(ns: NS): Promise<void> {
         const pids = []
         for (const hostname of hostsNeedMustering) {
             const growTime = ns.getGrowTime(hostname)
-            const pid = ns.run("grow.js", { threads: threadsPerSapHost }, hostname, threadsPerSapHost, ...additionalArgs)
+            const pid = ns.run(
+                "grow.js",
+                { threads: threadsPerSapHost },
+                hostname,
+                threadsPerSapHost,
+                ...additionalArgs
+            )
             if (pid !== 0) {
                 pids.push(pid)
-                print(`Mustering on ${hostname} PID ${pid} (${formatMs(growTime)})`)
+                print(
+                    `Mustering on ${hostname} PID ${pid} (${formatMs(
+                        growTime
+                    )})`
+                )
             }
             await ns.sleep(100)
         }

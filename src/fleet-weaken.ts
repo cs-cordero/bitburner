@@ -1,5 +1,11 @@
-import { NS } from "@ns";
-import { formatMs, getPrintFunc, getPwndServers, getTargetedScriptArgs, shouldRunOnlyOnce } from "/lib/util";
+import { NS } from "@ns"
+import {
+    formatMs,
+    getPrintFunc,
+    getPwndServers,
+    getTargetedScriptArgs,
+    shouldRunOnlyOnce,
+} from "/lib/util"
 
 /**
  * Orders all pwned servers to use as much capacity as they can to weaken a single target.
@@ -14,12 +20,14 @@ export async function main(ns: NS): Promise<void> {
     }
 
     for (const hostname of pwndServers) {
-        const ram = ns.getServerMaxRam(hostname);
-        const mem = ns.getScriptRam("weaken.js", hostname);
-        const threads = Math.floor(ram / mem);
+        const ram = ns.getServerMaxRam(hostname)
+        const mem = ns.getScriptRam("weaken.js", hostname)
+        const threads = Math.floor(ram / mem)
 
         if (threads === Infinity) {
-            throw new Error(`${ram} ${mem} ${threads} ${hostname}. Probably you need to sync.js`)
+            throw new Error(
+                `${ram} ${mem} ${threads} ${hostname}. Probably you need to sync.js`
+            )
         }
 
         if (threads > 0) {
@@ -29,8 +37,12 @@ export async function main(ns: NS): Promise<void> {
             }
 
             const weakenTime = ns.getWeakenTime(args.target)
-            const pid = ns.exec("weaken.js", hostname, { threads }, ...execArgs);
-            print(`Started weaken.js on ${hostname} with PID ${pid} with ${threads} threads. (${formatMs(weakenTime)})`)
+            const pid = ns.exec("weaken.js", hostname, { threads }, ...execArgs)
+            print(
+                `Started weaken.js on ${hostname} with PID ${pid} with ${threads} threads. (${formatMs(
+                    weakenTime
+                )})`
+            )
         }
     }
 }
