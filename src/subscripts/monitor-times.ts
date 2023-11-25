@@ -29,7 +29,7 @@ export async function main(ns: NS): Promise<void> {
                 }
             })
 
-        data.sort((a, b) => b.growthMetric - a.growthMetric)
+        data.sort((a, b) => a.server.localeCompare(b.server))
         const serverPad = data.reduce((a, b) => Math.max(a, b.server.length), 0)
         const hackPad = data.reduce((a, b) => Math.max(a, b.hackTime.length), 0)
         const growPad = data.reduce((a, b) => Math.max(a, b.growTime.length), 0)

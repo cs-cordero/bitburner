@@ -1,10 +1,5 @@
 import { NS } from "@ns"
-import {
-    formatNumber,
-    formatPct,
-    getAllServers,
-    getPwndServers,
-} from "/lib/util"
+import { formatNumber, formatPct, getAllServers, getPwndServers, } from "/lib/util"
 
 interface TargetThreadCount {
     growThreads: number
@@ -53,7 +48,7 @@ export async function main(ns: NS): Promise<void> {
                 }
             })
 
-        const data = getPwndServers(ns)
+        let data = getPwndServers(ns)
             .filter((hostname) => !hostname.startsWith("home"))
             .map((hostname) => {
                 const moneyCurr = ns.getServerMoneyAvailable(hostname)
@@ -86,6 +81,7 @@ export async function main(ns: NS): Promise<void> {
             })
 
         data.sort((a, b) => b.moneyMax - a.moneyMax)
+        data = data.slice(0, 30)
         const hostnamePad = data.reduce(
             (a, b) => Math.max(a, b.server.length),
             0

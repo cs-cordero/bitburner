@@ -33,8 +33,17 @@ export async function main(ns: NS): Promise<void> {
         }
     })
 
+    let infoToShow;
+    if (ns.args.includes("--all")) {
+        infoToShow = info
+    } else if (ns.args.includes("--all-future")) {
+        infoToShow = info.filter(inf => !ns.hasRootAccess(inf.hostname))
+    } else {
+        infoToShow = info.filter(inf => !ns.hasRootAccess(inf.hostname) && inf.reqHackingLevel - ns.getHackingLevel() <= 100)
+    }
+
     print("Server vulnerability information")
-    for (const datum of info) {
+    for (const datum of infoToShow) {
         if (
             !ns.args.includes("--all") &&
             datum.reqHackingLevel - ns.getHackingLevel() > 100

@@ -1,5 +1,5 @@
 {
-  "name": "bitburner-typescript-template",
+  "name": "bitburner",
   "version": "2.0.0",
   "scripts": {
     "watch:transpile": "prettier src/ --write && tsc -w --preserveWatchOutput",
@@ -9,7 +9,7 @@
     "watch:all": "concurrently npm:watch:transpile npm:watch:local npm:watch:remote",
     "watch": "npm run watch:init && npm run watch:all"
   },
-  "author": "hydroflame, Hoekstraa, based on work by SlyCedix",
+  "author": "cs-cordero",
   "devDependencies": {
     "@types/react": "^18.2.18",
     "@types/react-dom": "^18.2.7",

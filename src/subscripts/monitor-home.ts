@@ -25,6 +25,7 @@ export async function main(ns: NS): Promise<void> {
         let fleetWeakenThreads = 0
         let fleetHackThreads = 0
         let fleetGrowThreads = 0
+        let fleetShareThreads = 0
         for (const pwndServer of getPwndServers(ns)) {
             const maxRam = ns.getServerMaxRam(pwndServer)
             const usedRam = ns.getServerUsedRam(pwndServer)
@@ -39,6 +40,8 @@ export async function main(ns: NS): Promise<void> {
                     fleetGrowThreads += proc.threads
                 } else if (proc.filename === "hack.js") {
                     fleetHackThreads += proc.threads
+                } else if (proc.filename === "share.js") {
+                    fleetShareThreads += proc.threads
                 }
             }
         }
@@ -59,6 +62,7 @@ export async function main(ns: NS): Promise<void> {
         fleetWeakenThreads && ns.print(`  ${fleetWeakenThreads} weaken.js`)
         fleetGrowThreads && ns.print(`  ${fleetGrowThreads} grow.js`)
         fleetHackThreads && ns.print(`  ${fleetHackThreads} hack.js`)
+        fleetShareThreads && ns.print(`  ${fleetShareThreads} share.js`)
         await ns.sleep(200)
     }
 }

@@ -5,14 +5,13 @@ import { algorithmicStockTraderIII } from "/contracts/contract-algorithmic-stock
 import { algorithmicStockTraderIV } from "/contracts/contract-algorithmic-stock-iv"
 import { arrayJumpingGameI } from "/contracts/contract-array-jumping-game-i"
 import { arrayJumpingGameII } from "/contracts/contract-array-jumping-game-ii"
-import { compressionIIILzCompression } from "/contracts/contract-compression-iii-lz-compression"
 import { compressionIILzDecompression } from "/contracts/contract-compression-ii-lz-decompression"
 import { compressionIRleCompression } from "/contracts/contract-compression-i-rle-compression"
 import { encryptionICaesarCipher } from "/contracts/contract-encryption-i-caesar-cipher"
 import { encryptionIIVigenereCypher } from "/contracts/contract-encryption-ii-vigenere"
 import { findLargestPrimeFactor } from "/contracts/contract-find-largest-prime-factor"
 import { findValidMath } from "/contracts/contract-find-valid-math"
-import { getAllServers } from "/lib/util"
+import { getAllServers, getPrintFunc } from "/lib/util"
 import { hammingCodesEncodedToInteger } from "/contracts/contract-hammingcodes-encoded-to-integer"
 import { hammingCodesIntegerToEncoded } from "/contracts/contract-hammingcodes-integer-to-encoded"
 import { mergeOverlappingIntervals } from "/contracts/contract-merge-overlapping-intervals"
@@ -25,19 +24,22 @@ import { subarrayWithMaximumSum } from "/contracts/contract-subarray-with-maximu
 import { totalWaysToSumII } from "/contracts/contract-total-ways-to-sum-ii"
 import { uniquePathsInAGridI } from "/contracts/contract-unique-paths-in-a-grid-i"
 import { uniquePathsInAGridII } from "/contracts/contract-unique-paths-in-a-grid-ii"
+import { generateIpAddresses } from "/contracts/contract-generate-ip-addresses";
+import { totalWaysToSumI } from "/contracts/contract-total-ways-to-sum-i";
+import { compressionIIILzCompression } from "/contracts/contract-compression-iii-lz-compression";
 
 const CONTRACT_TYPE_TO_SCRIPT: {
     [contractType: string]: ((ns: NS, input: any) => string) | undefined
 } = {
     "Find Largest Prime Factor": findLargestPrimeFactor,
     "Subarray with Maximum Sum": subarrayWithMaximumSum,
-    "Total Ways to Sum": undefined,
+    "Total Ways to Sum": totalWaysToSumI,
     "Total Ways to Sum II": totalWaysToSumII,
     "Spiralize Matrix": spiralizeMatrix,
     "Array Jumping Game": arrayJumpingGameI,
     "Array Jumping Game II": arrayJumpingGameII,
     "Merge Overlapping Intervals": mergeOverlappingIntervals,
-    "Generate IP Addresses": undefined,
+    "Generate IP Addresses": generateIpAddresses,
     "Algorithmic Stock Trader I": algorithmicStockTraderI,
     "Algorithmic Stock Trader II": algorithmicStockTraderII,
     "Algorithmic Stock Trader III": algorithmicStockTraderIII,
@@ -62,12 +64,18 @@ const CONTRACT_TYPE_TO_SCRIPT: {
  * Executes solvers for contracts across every server across the entire game.
  */
 export async function main(ns: NS): Promise<void> {
+    const print = getPrintFunc(ns)
     const contractsToServer = getAllServers(ns).flatMap((hostname) =>
         ns
             .ls(hostname)
             .filter((filename) => filename.endsWith(".cct"))
             .map((filename) => [filename, hostname] as [string, string])
     )
+
+    if (!contractsToServer.length) {
+        print("No contracts to work on!")
+        return
+    }
 
     for (const [contract, server] of contractsToServer) {
         const contractType = ns.codingcontract.getContractType(contract, server)
@@ -84,22 +92,24 @@ export async function main(ns: NS): Promise<void> {
                     server
                 )
                 if (result === "") {
-                    ns.tprint(`Attempt with ${answer} failed.`)
+                    print(`Attempt with ${answer} failed. (${contractType})`)
                 } else {
-                    ns.tprint(
-                        `Successful contract execution on ${contract}@${server}: ${result}`
-                    )
+                    print(`Successful contract execution on ${contract}@${server}: ${result}`)
                 }
             } else {
-                ns.tprint(`\t${contract}@${server} Answer: ${answer}`)
+                print(`  ${contract}@${server}`)
+                print(`    Type: ${contractType}`)
+                print(`    Answer: ${answer}`)
+                print(`    Input: ${input}`)
+                print(`    Attempts Remaining: ${ns.codingcontract.getNumTriesRemaining(contract, server)}`)
             }
         } else {
-            ns.tprint(
+            print(
                 `${contract}@${server}: New contract type: "${contractType}"`
             )
             if (ns.args.includes("--show")) {
-                ns.tprint(ns.codingcontract.getDescription(contract, server))
-                ns.tprint(ns.codingcontract.getData(contract, server))
+                print(ns.codingcontract.getDescription(contract, server))
+                print(ns.codingcontract.getData(contract, server))
             }
         }
     }

@@ -16,6 +16,7 @@ export function compressionIIILzCompression(ns: NS, input: any): string {
 
     let circuitBreaker = 0
 
+    const seen: Set<string> = new Set()
     const queue: PartialCompression[] = [
         { compressed: "", compressionLength: 0, cycles: 0 },
     ]
@@ -69,7 +70,6 @@ export function compressionIIILzCompression(ns: NS, input: any): string {
         }
 
         // type 2 compression
-        let longestType2Length = -Infinity
         let combinedCandidates: PartialCompression[] = []
         for (const type1Candidate of type1CompressionCandidates) {
             const type1CompressedLength =
@@ -105,14 +105,7 @@ export function compressionIIILzCompression(ns: NS, input: any): string {
                             cycles: current.cycles + 1,
                         }
 
-                        if (type2CompressedLength > longestType2Length) {
-                            longestType2Length = type2CompressedLength
-                            combinedCandidates = [newCompression]
-                        } else if (
-                            type2CompressedLength === longestType2Length
-                        ) {
-                            combinedCandidates.push(newCompression)
-                        }
+                        combinedCandidates.push(newCompression)
                     }
                 }
             } else {
@@ -121,19 +114,16 @@ export function compressionIIILzCompression(ns: NS, input: any): string {
                     compressionLength: type1CompressedLength,
                     cycles: current.cycles + 1,
                 }
-                if (0 > longestType2Length) {
-                    longestType2Length = 0
-                    combinedCandidates = [newCompression]
-                } else if (0 === longestType2Length) {
-                    combinedCandidates.push(newCompression)
-                }
+                combinedCandidates.push(newCompression)
             }
         }
 
         combinedCandidates.forEach((candidate) => {
-            if (candidate.compressed.length <= uncompressed.length + 10) {
+            const key = `${candidate.compressionLength},${candidate.compressed.length}`
+            if (!seen.has(key) && candidate.compressed.length <= uncompressed.length + 10) {
                 queue.push(candidate)
             }
+            seen.add(key)
         })
     }
 

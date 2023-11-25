@@ -7,6 +7,10 @@ import { getTargetedScriptArgs } from "/lib/util"
 export async function main(ns: NS): Promise<void> {
     const args = getTargetedScriptArgs(ns)
 
+    ns.tprint(findPathFromHome(ns, args.target).join("->"))
+}
+
+export function findPathFromHome(ns: NS, target: string): string[] {
     const seen: Set<string> = new Set()
     seen.add("home")
 
@@ -14,8 +18,8 @@ export async function main(ns: NS): Promise<void> {
     while (queue.length) {
         const path = queue.shift()!
         const currentHost = path[path.length - 1]
-        if (currentHost === args.target) {
-            ns.tprint(path.join("->"))
+        if (currentHost === target) {
+            return path
         }
         for (const neighbor of ns.scan(currentHost)) {
             if (seen.has(neighbor)) {
@@ -25,4 +29,6 @@ export async function main(ns: NS): Promise<void> {
             queue.push([...path, neighbor])
         }
     }
+
+    return []
 }

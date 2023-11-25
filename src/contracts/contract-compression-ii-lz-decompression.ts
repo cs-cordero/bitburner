@@ -11,9 +11,7 @@ export function compressionIILzDecompression(ns: NS, input: any): string {
     while (compressed.length) {
         if (chunkIsTypeA) {
             const l = parseInt(compressed.shift()!)
-            if (l === 0) {
-                compressed.shift()
-            } else {
+            if (l !== 0) {
                 for (let i = 0; i < l; i++) {
                     uncompressed += compressed.shift()!
                 }

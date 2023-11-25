@@ -349,6 +349,49 @@ export function getFreeThreadCount(ns: NS, host?: string): number {
 }
 
 /**
+ * Estimates the memory cost of the base scripts. This underlies most thread counting logic.
+ */
+export function getMemCost(ns: NS): number {
+    return Math.max(
+        ns.getScriptRam("hack.js", "home"),
+        ns.getScriptRam("grow.js", "home"),
+        ns.getScriptRam("weaken.js", "home")
+    )
+}
+
+/**
+ * Analyzes the thread counts across the fleet.
+ */
+export function getFleetThreadManifest(ns: NS) {
+    const memCost = getMemCost(ns)
+
+    let fleetThreadsMax = 0
+    let fleetThreadsFree = 0
+    let fleetWeakenThreads = 0
+    let fleetHackThreads = 0
+    let fleetGrowThreads = 0
+    for (const pwndServer of getPwndServers(ns)) {
+        const maxRam = ns.getServerMaxRam(pwndServer)
+        const usedRam = ns.getServerUsedRam(pwndServer)
+        const freeRam = maxRam - usedRam
+        fleetThreadsMax += Math.floor(maxRam / memCost)
+        fleetThreadsFree += Math.floor(freeRam / memCost)
+
+        for (const proc of ns.ps(pwndServer)) {
+            if (proc.filename === "weaken.js") {
+                fleetWeakenThreads += proc.threads
+            } else if (proc.filename === "grow.js") {
+                fleetGrowThreads += proc.threads
+            } else if (proc.filename === "hack.js") {
+                fleetHackThreads += proc.threads
+            }
+        }
+    }
+
+    return { fleetThreadsMax, fleetThreadsFree, fleetWeakenThreads, fleetGrowThreads, fleetHackThreads }
+}
+
+/**
  * Parses the script arguments for the presence of a flag that indicates a script should run only once.
  */
 export function shouldRunOnlyOnce(ns: NS): boolean {

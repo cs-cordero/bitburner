@@ -14,6 +14,7 @@
 - There should be a 12:1 ratio for growth to weaken threads for a given server.
   - Every `grow()` increases security level by 0.004.
   - Every `weaken()` decreases security level by 0.05.
+  - Every `hack()` increase security level by 0.002.
   - A 12:1 ratio will keep the security stable, slightly decreasing it.
 
 `0.004 / timeGrow` is the increase in sec level per second per thread, call it `A`.
