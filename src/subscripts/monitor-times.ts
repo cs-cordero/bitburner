@@ -1,5 +1,5 @@
 import { NS } from "@ns"
-import { formatMs, getPwndServers, round } from "/lib/util"
+import { formatMs, getFleetServers, round } from "/lib/util"
 
 /**
  * Provides information on the grow, weaken, and hack times for every pwned server.
@@ -8,8 +8,7 @@ export async function main(ns: NS): Promise<void> {
     ns.tail()
     ns.disableLog("ALL")
     while (true) {
-        const data = getPwndServers(ns)
-            .filter((hostname) => !hostname.startsWith("home"))
+        const data = getFleetServers(ns)
             .map((hostname) => {
                 const hackTime = formatMs(ns.getHackTime(hostname))
                 const growTime = ns.getGrowTime(hostname)

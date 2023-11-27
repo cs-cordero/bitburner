@@ -1,6 +1,13 @@
 import { NS } from "@ns"
 
 /**
+ * The prefix used when we purchase servers.
+ */
+export const PURCHASED_SERVER_PREFIX = "owned"
+
+export type ProcessId = number
+
+/**
  * Type guard for string
  */
 export function isString(x: unknown): x is string {
@@ -91,42 +98,6 @@ export function round(x: number, decimalPoints: number): number {
 }
 
 /**
- * An allocation of threads to run grow or weaken for a given host.
- */
-export interface GrowWeakenAllocation {
-    hostname: string
-    growThreads: number
-    weakenThreads: number
-}
-
-/**
- * Determines the number of grow threads allowed given the availableThreads count and a ratio of
- * grow threads per weaken.
- */
-export function getNumberOfGrowThreads(
-    availableThreads: number,
-    growThreadsPerWeaken: number
-): number {
-    let growThreads = 0
-    while (availableThreads > 0) {
-        availableThreads -= 1 // remove 1 for weaken thread.
-        const growThreadAlloc = Math.min(growThreadsPerWeaken, availableThreads)
-        growThreads += growThreadAlloc
-        availableThreads -= growThreadAlloc
-    }
-    return growThreads
-}
-
-/**
- * Identifies all servers, excepting "home", that we have root access to.
- */
-export function getPwndServers(ns: NS): string[] {
-    return getAllServers(ns)
-        .filter((hostname) => ns.hasRootAccess(hostname))
-        .filter((hostname) => hostname !== "home")
-}
-
-/**
  * Identifies all servers in the game, including home.
  */
 export function getAllServers(ns: NS): string[] {
@@ -149,82 +120,51 @@ export function getAllServers(ns: NS): string[] {
 }
 
 /**
- * Represents an allocation to run a script on a certain host with a certain number of threads.
+ * Identifies all servers, excepting "home", that we have root access to.
  */
-export interface ScriptThreadAllocation {
-    hostname: string
-    scriptName: string
-    threads: number
+export function getPwndServers(ns: NS): string[] {
+    return getAllServers(ns)
+        .filter((hostname) => ns.hasRootAccess(hostname))
+        .filter((hostname) => hostname !== "home")
 }
 
 /**
- * Given the desire to run a particular script with a certain number of threads, this will scan
- * all pwnd servers and allocate as many threads as it can to each host until the given thread count is reached.
+ * Get all hostnames belonging to servers in our fleet, upon which we can execute scripts.
  */
-export function allocateThreadsForScript(
-    ns: NS,
-    scriptName: string,
-    neededThreads: number
-): ScriptThreadAllocation[] {
-    const result = []
-    const memCost = ns.getScriptRam(scriptName)
-
-    let remainingThreadCount = neededThreads
-    for (const hostname of getPwndServers(ns)) {
-        if (remainingThreadCount === 0) {
-            break
-        }
-        if (!ns.fileExists(scriptName, hostname)) {
-            continue
-        }
-
-        const maxRam = ns.getServerMaxRam(hostname)
-        const usedRam = ns.getServerUsedRam(hostname)
-        const freeRam = maxRam - usedRam
-
-        const allowableThreads = Math.floor(freeRam / memCost)
-        const threads = Math.min(allowableThreads, remainingThreadCount)
-
-        if (threads > 0) {
-            result.push({ hostname, scriptName, threads })
-            remainingThreadCount -= allowableThreads
-        }
-    }
-    return result
+export function getFleetServers(ns: NS): string[] {
+    return getAllServers(ns)
+        .filter((hostname) => ns.hasRootAccess(hostname))
+        .filter((hostname) => hostname !== "home")
 }
 
 /**
- * Determines the number of threads on a host running weaken() that would minimize the sec lvl in one cycle.
+ * Get all hostnames belonging to servers that we do not own.
+ * Avoids using ns.getPurchasedServers() to keep RAM usage low.
  */
-export function getNumberOfWeakenThreadsNeeded(
-    ns: NS,
-    hostname: string
-): number {
-    const current = ns.getServerSecurityLevel(hostname)
-    const min = ns.getServerMinSecurityLevel(hostname)
-    const decreasePerThread = 0.05 // game-defined
-    const targetAmountToDecrease = current - min
-
-    return Math.ceil(targetAmountToDecrease / decreasePerThread)
+export function getTargetableServers(ns: NS): string[] {
+    return getFleetServers(ns).filter(hostname => !hostname.startsWith(PURCHASED_SERVER_PREFIX))
 }
 
 /**
  * Given a PID, will wait second-by-second until it finishes.
  */
-export async function waitUntilPidFinishes(ns: NS, pid: number): Promise<void> {
+export async function waitUntilPidFinishes(ns: NS, pid: ProcessId): Promise<void> {
     if (pid === 0) {
         throw new Error("Pid was 0. It must have failed")
     }
 
-    let elapsedSeconds = 0
     while (ns.isRunning(pid)) {
-        ns.print(
-            `Waiting for pid ${pid} to finish. Elapsed seconds ${elapsedSeconds}s`
-        )
         await ns.sleep(1000)
-        elapsedSeconds += 1
     }
-    ns.print(`Pid ${pid} completed after ${elapsedSeconds} seconds.`)
+}
+
+/**
+ * Given a collection of PIDs, will wait second-by-second until they all finish.
+ */
+export async function waitUntilPidsFinish(ns: NS, pids: ProcessId[]): Promise<void> {
+    for (const pid of pids) {
+        await waitUntilPidFinishes(ns, pid)
+    }
 }
 
 /**
@@ -235,31 +175,6 @@ export interface Process {
     hostname: string
     threads: number
     target?: string
-}
-
-/**
- * Given a list of Processes, will wait second-by-second until it finishes.
- */
-export async function waitUntilProcessesFinishes(
-    ns: NS,
-    processes: Process[]
-): Promise<void> {
-    let elapsedSeconds = 0
-    let remaining = [...processes]
-
-    while (remaining.length) {
-        ns.print(
-            `Waiting for processes ${remaining} to finish. Elapsed seconds ${elapsedSeconds}s`
-        )
-        await ns.sleep(1000)
-        remaining = remaining.filter((proc) =>
-            ns.isRunning(proc.pid, proc.hostname)
-        )
-        elapsedSeconds += 1
-    }
-    ns.print(
-        `Processes ${processes} completed after ${elapsedSeconds} seconds.`
-    )
 }
 
 export function getPrintFunc(ns: NS): (arg: any) => void {
@@ -331,65 +246,6 @@ export function getScanScriptArgs(ns: NS): ScanScriptArgs {
     return args
 }
 
-/**
- * Determines how many free threads there are to run hack(), grow(), or weaken(), on a host.
- * @param ns
- */
-export function getFreeThreadCount(ns: NS, host?: string): number {
-    const hostname = host ?? "home"
-    const maxRam = ns.getServerMaxRam(hostname)
-    const usedRam = ns.getServerUsedRam(hostname)
-    const freeRam = maxRam - usedRam
-    const memCost = Math.max(
-        ns.getScriptRam("hack.js", "home"), // home has the canonical version of the script
-        ns.getScriptRam("grow.js", "home"), // home has the canonical version of the script
-        ns.getScriptRam("weaken.js", "home") // home has the canonical version of the script
-    )
-    return Math.floor(freeRam / memCost)
-}
-
-/**
- * Estimates the memory cost of the base scripts. This underlies most thread counting logic.
- */
-export function getMemCost(ns: NS): number {
-    return Math.max(
-        ns.getScriptRam("hack.js", "home"),
-        ns.getScriptRam("grow.js", "home"),
-        ns.getScriptRam("weaken.js", "home")
-    )
-}
-
-/**
- * Analyzes the thread counts across the fleet.
- */
-export function getFleetThreadManifest(ns: NS) {
-    const memCost = getMemCost(ns)
-
-    let fleetThreadsMax = 0
-    let fleetThreadsFree = 0
-    let fleetWeakenThreads = 0
-    let fleetHackThreads = 0
-    let fleetGrowThreads = 0
-    for (const pwndServer of getPwndServers(ns)) {
-        const maxRam = ns.getServerMaxRam(pwndServer)
-        const usedRam = ns.getServerUsedRam(pwndServer)
-        const freeRam = maxRam - usedRam
-        fleetThreadsMax += Math.floor(maxRam / memCost)
-        fleetThreadsFree += Math.floor(freeRam / memCost)
-
-        for (const proc of ns.ps(pwndServer)) {
-            if (proc.filename === "weaken.js") {
-                fleetWeakenThreads += proc.threads
-            } else if (proc.filename === "grow.js") {
-                fleetGrowThreads += proc.threads
-            } else if (proc.filename === "hack.js") {
-                fleetHackThreads += proc.threads
-            }
-        }
-    }
-
-    return { fleetThreadsMax, fleetThreadsFree, fleetWeakenThreads, fleetGrowThreads, fleetHackThreads }
-}
 
 /**
  * Parses the script arguments for the presence of a flag that indicates a script should run only once.
@@ -403,4 +259,26 @@ export function shouldRunOnlyOnce(ns: NS): boolean {
  */
 export function formulasApiActive(ns: NS): boolean {
     return ns.fileExists("Formulas.exe", "home")
+}
+
+class ProcessWatcher {
+    readonly processes: Set<Process>
+
+    constructor() {
+        this.processes = new Set<Process>()
+    }
+
+    watch(process: Process) {
+        this.processes.add(process)
+    }
+
+    tick(ns: NS) {
+        const processesToRemove = []
+        for (const process of this.processes) {
+            if (!ns.isRunning(process.pid, process.hostname)) {
+                processesToRemove.push(process)
+            }
+        }
+        processesToRemove.forEach(process => this.processes.delete(process))
+    }
 }

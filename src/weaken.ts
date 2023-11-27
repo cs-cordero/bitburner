@@ -1,11 +1,5 @@
 import { NS } from "@ns"
-import {
-    formatMs,
-    getPrintFunc,
-    getTargetedScriptArgs,
-    round,
-    shouldRunOnlyOnce,
-} from "/lib/util"
+import { formatMs, getPrintFunc, getTargetedScriptArgs, round, shouldRunOnlyOnce, } from "/lib/util"
 
 /**
  * Runs weaken() on a target server.
@@ -20,12 +14,7 @@ export async function main(ns: NS): Promise<void> {
         const weakenAmount = await ns.weaken(args.target, {
             threads: args.threads,
         })
-        print(
-            `[${ns.getHostname()}] Weakened ${args.target} by ${round(
-                weakenAmount,
-                3
-            )} security level.`
-        )
+        print(`[${ns.getHostname()}] Weakened ${args.target} by ${round(weakenAmount,3)} security level.`)
 
         if (shouldRunOnlyOnce(ns)) {
             break

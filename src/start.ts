@@ -6,5 +6,6 @@ import { NS } from "@ns"
 export async function main(ns: NS): Promise<void> {
     ns.run("subscripts/monitor-fleet.js")
     ns.run("subscripts/monitor-home.js")
-    ns.run("subscripts/monitor-times.js")
+    ns.run("sync.js")
+    ns.run("contracts.js", undefined, "--submit")
 }

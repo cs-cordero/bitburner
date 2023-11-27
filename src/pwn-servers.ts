@@ -25,16 +25,12 @@ export function getNukableHosts(ns: NS) {
     const programs = getVulnerabilityPrograms(ns)
 
     return getAllServers(ns)
-        .filter((hostname) => !ns.hasRootAccess(hostname)) // we don't have root access to it yet
-        .filter(
-            (hostname) =>
-                ns.getServerRequiredHackingLevel(hostname) <=
-                ns.getHackingLevel()
-        ) // we can hack it
-        .filter(
-            (hostname) =>
-                ns.getServerNumPortsRequired(hostname) <= programs.length
-        ) // we can open enough ports
+        // we don't have root access to it yet
+        .filter((hostname) => !ns.hasRootAccess(hostname))
+        // we can hack it
+        .filter((hostname) => ns.getServerRequiredHackingLevel(hostname) <= ns.getHackingLevel())
+        // we can open enough ports
+        .filter((hostname) => ns.getServerNumPortsRequired(hostname) <= programs.length)
 }
 
 function getVulnerabilityPrograms(ns: NS) {

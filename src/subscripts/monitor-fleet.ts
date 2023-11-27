@@ -1,11 +1,6 @@
 import { NS } from "@ns"
-import { formatNumber, formatPct, getAllServers, getPwndServers, } from "/lib/util"
-
-interface TargetThreadCount {
-    growThreads: number
-    weakenThreads: number
-    hackThreads: number
-}
+import { formatNumber, formatPct, getTargetableServers, } from "/lib/util"
+import { countIncomingThreads } from "/lib/threads";
 
 /**
  * Provides information on the fleet (pwned, non-purchased).
@@ -13,43 +8,10 @@ interface TargetThreadCount {
 export async function main(ns: NS): Promise<void> {
     ns.tail()
     ns.disableLog("ALL")
-    const scripts = ["hack.js", "weaken.js", "grow.js"]
     while (true) {
-        const targetToThreadCount: { [hostname: string]: TargetThreadCount } =
-            {}
-        getAllServers(ns)
-            .filter((hostname) => ns.hasRootAccess(hostname))
-            .forEach((hostname) => {
-                for (const proc of ns.ps(hostname)) {
-                    if (!scripts.includes(proc.filename)) {
-                        continue
-                    }
+        const targetToThreadCount = countIncomingThreads(ns)
 
-                    const target = proc.args[0] as string
-                    const threads = proc.threads
-
-                    if (targetToThreadCount[target] == undefined) {
-                        targetToThreadCount[target] = {
-                            growThreads: 0,
-                            weakenThreads: 0,
-                            hackThreads: 0,
-                        }
-                    }
-
-                    if (proc.filename === "weaken.js") {
-                        targetToThreadCount[target].weakenThreads += threads
-                    } else if (proc.filename === "hack.js") {
-                        targetToThreadCount[target].hackThreads += threads
-                    } else if (proc.filename === "grow.js") {
-                        targetToThreadCount[target].growThreads += threads
-                    } else {
-                        throw new Error("Oops")
-                    }
-                }
-            })
-
-        let data = getPwndServers(ns)
-            .filter((hostname) => !hostname.startsWith("home"))
+        let data = getTargetableServers(ns)
             .map((hostname) => {
                 const moneyCurr = ns.getServerMoneyAvailable(hostname)
                 const moneyMax = ns.getServerMaxMoney(hostname)
@@ -65,9 +27,7 @@ export async function main(ns: NS): Promise<void> {
                     Math.max(0, securityLevel - minSecurityLevel),
                     false
                 )}`
-                const hackChance = `${formatPct(chance)}%`
-                const evMax = formatNumber(chance * moneyMax)
-                const ev = `[${evMax} (${hackChance})]`
+                const hackChance = `${formatPct(chance * 100)}%`
 
                 return {
                     server,
@@ -76,12 +36,11 @@ export async function main(ns: NS): Promise<void> {
                     pctMoney,
                     securityDelta,
                     moneyMax,
-                    ev,
+                    hackChance,
                 }
             })
 
         data.sort((a, b) => b.moneyMax - a.moneyMax)
-        data = data.slice(0, 30)
         const hostnamePad = data.reduce(
             (a, b) => Math.max(a, b.server.length),
             0
@@ -102,7 +61,7 @@ export async function main(ns: NS): Promise<void> {
             (a, b) => Math.max(a, b.securityDelta.length),
             0
         )
-        const evPad = data.reduce((a, b) => Math.max(a, b.ev.length), 0)
+        const chancePad = data.reduce((a, b) => Math.max(a, b.hackChance.length), 0)
 
         ns.clearLog()
         for (const datum of data) {
@@ -111,20 +70,17 @@ export async function main(ns: NS): Promise<void> {
             const max = datum.maxMoney.padStart(maxMoneyPad)
             const pct = datum.pctMoney.padStart(pctMoneyPad)
             const delta = datum.securityDelta.padEnd(deltaPad)
-            const ev = datum.ev.padStart(evPad)
+            const hackChance = datum.hackChance.padStart(chancePad)
 
-            const threads = targetToThreadCount[
-                datum.server.replace(":", "")
-            ] ?? {
-                weakenThreads: 0,
-                growThreads: 0,
-                hackThreads: 0,
+            const targetedHost = datum.server.replace(":", "")
+            const threads = targetToThreadCount[targetedHost] ?? {
+                incomingWeaken: 0,
+                incomingGrow: 0,
+                incomingHack: 0,
             }
-            const threadDesc = `${threads.weakenThreads}W ${threads.growThreads}G ${threads.hackThreads}H`
+            const threadDesc = `${threads.incomingWeaken}W ${threads.incomingGrow}G ${threads.incomingHack}H`
 
-            ns.print(
-                `${server} ${current} / ${max} ${pct} ${ev} ${delta} ${threadDesc}`
-            )
+            ns.print(`${server} ${current} / ${max} ${pct} [${hackChance}] ${delta} ${threadDesc}`)
         }
 
         await ns.sleep(200)

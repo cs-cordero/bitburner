@@ -1,5 +1,5 @@
 import { NS } from "@ns"
-import { getPwndServers } from "/lib/util"
+import { getFleetThreadManifest, getHomeThreadManifest } from "/lib/threads";
 
 /**
  * Provides information on the ever-important "home" server.
@@ -8,46 +8,11 @@ export async function main(ns: NS): Promise<void> {
     ns.tail()
     ns.disableLog("ALL")
     while (true) {
-        const memCost = Math.max(
-            ns.getScriptRam("hack.js", "home"),
-            ns.getScriptRam("grow.js", "home"),
-            ns.getScriptRam("weaken.js", "home")
-        )
-
-        const maxRam = ns.getServerMaxRam("home")
-        const usedRam = ns.getServerUsedRam("home")
-        const freeRam = maxRam - usedRam
-        const threadsMax = Math.floor(maxRam / memCost)
-        const threadsFree = Math.floor(freeRam / memCost)
-
-        let fleetThreadsMax = 0
-        let fleetThreadsFree = 0
-        let fleetWeakenThreads = 0
-        let fleetHackThreads = 0
-        let fleetGrowThreads = 0
-        let fleetShareThreads = 0
-        for (const pwndServer of getPwndServers(ns)) {
-            const maxRam = ns.getServerMaxRam(pwndServer)
-            const usedRam = ns.getServerUsedRam(pwndServer)
-            const freeRam = maxRam - usedRam
-            fleetThreadsMax += Math.floor(maxRam / memCost)
-            fleetThreadsFree += Math.floor(freeRam / memCost)
-
-            for (const proc of ns.ps(pwndServer)) {
-                if (proc.filename === "weaken.js") {
-                    fleetWeakenThreads += proc.threads
-                } else if (proc.filename === "grow.js") {
-                    fleetGrowThreads += proc.threads
-                } else if (proc.filename === "hack.js") {
-                    fleetHackThreads += proc.threads
-                } else if (proc.filename === "share.js") {
-                    fleetShareThreads += proc.threads
-                }
-            }
-        }
+        const homeThreadManifest = getHomeThreadManifest(ns)
+        const fleetThreadManifest = getFleetThreadManifest(ns)
 
         ns.clearLog()
-        ns.print(`Home Threads: ${threadsFree} available out of ${threadsMax}`)
+        ns.print(`Home Threads: ${homeThreadManifest.free} available out of ${homeThreadManifest.max}`)
         ns.ps("home")
             .sort((a, b) => a.filename.localeCompare(b.filename))
             .forEach((p) =>
@@ -57,12 +22,12 @@ export async function main(ns: NS): Promise<void> {
             )
         ns.print("\n===========\n\n")
         ns.print(
-            `Fleet Threads: ${fleetThreadsFree} available out of ${fleetThreadsMax}`
+            `Fleet Threads: ${fleetThreadManifest.free} available out of ${fleetThreadManifest.max}`
         )
-        fleetWeakenThreads && ns.print(`  ${fleetWeakenThreads} weaken.js`)
-        fleetGrowThreads && ns.print(`  ${fleetGrowThreads} grow.js`)
-        fleetHackThreads && ns.print(`  ${fleetHackThreads} hack.js`)
-        fleetShareThreads && ns.print(`  ${fleetShareThreads} share.js`)
+        fleetThreadManifest.weaken && ns.print(`  ${fleetThreadManifest.weaken} weaken.js`)
+        fleetThreadManifest.grow && ns.print(`  ${fleetThreadManifest.grow} grow.js`)
+        fleetThreadManifest.hack && ns.print(`  ${fleetThreadManifest.hack} hack.js`)
+        fleetThreadManifest.share && ns.print(`  ${fleetThreadManifest.share} share.js`)
         await ns.sleep(200)
     }
 }

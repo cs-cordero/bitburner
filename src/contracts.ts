@@ -65,52 +65,59 @@ const CONTRACT_TYPE_TO_SCRIPT: {
  */
 export async function main(ns: NS): Promise<void> {
     const print = getPrintFunc(ns)
-    const contractsToServer = getAllServers(ns).flatMap((hostname) =>
-        ns
-            .ls(hostname)
-            .filter((filename) => filename.endsWith(".cct"))
-            .map((filename) => [filename, hostname] as [string, string])
-    )
 
-    if (!contractsToServer.length) {
-        print("No contracts to work on!")
-        return
-    }
+    while (true) {
+        const contractsToServer = getAllServers(ns).flatMap((hostname) =>
+            ns
+                .ls(hostname)
+                .filter((filename) => filename.endsWith(".cct"))
+                .map((filename) => [filename, hostname] as [string, string])
+        )
 
-    for (const [contract, server] of contractsToServer) {
-        const contractType = ns.codingcontract.getContractType(contract, server)
-        const input = ns.codingcontract.getData(contract, server)
-        const solver = CONTRACT_TYPE_TO_SCRIPT[contractType]
+        if (!contractsToServer.length) {
+            print("No contracts to work on!")
+            await ns.sleep(10000)
+            continue
+        }
 
-        if (solver !== undefined) {
-            const answer = solver(ns, input)
+        for (const [contract, server] of contractsToServer) {
+            const contractType = ns.codingcontract.getContractType(contract, server)
+            const input = ns.codingcontract.getData(contract, server)
+            const solver = CONTRACT_TYPE_TO_SCRIPT[contractType]
 
-            if (ns.args.includes("--submit")) {
-                const result = ns.codingcontract.attempt(
-                    answer,
-                    contract,
-                    server
-                )
-                if (result === "") {
-                    print(`Attempt with ${answer} failed. (${contractType})`)
+            if (solver !== undefined) {
+                const answer = solver(ns, input)
+
+                if (ns.args.includes("--submit")) {
+                    const result = ns.codingcontract.attempt(
+                        answer,
+                        contract,
+                        server
+                    )
+                    if (result === "") {
+                        print(`Attempt with ${answer} failed. (${contractType})`)
+                    } else {
+                        print(`Successful contract execution on ${contract}@${server}: ${result}`)
+                    }
                 } else {
-                    print(`Successful contract execution on ${contract}@${server}: ${result}`)
+                    print(`  ${contract}@${server}`)
+                    print(`    Type: ${contractType}`)
+                    print(`    Answer: ${answer}`)
+                    print(`    Input: ${input}`)
+                    print(`    Attempts Remaining: ${ns.codingcontract.getNumTriesRemaining(contract, server)}`)
                 }
             } else {
-                print(`  ${contract}@${server}`)
-                print(`    Type: ${contractType}`)
-                print(`    Answer: ${answer}`)
-                print(`    Input: ${input}`)
-                print(`    Attempts Remaining: ${ns.codingcontract.getNumTriesRemaining(contract, server)}`)
+                print(
+                    `${contract}@${server}: New contract type: "${contractType}"`
+                )
+                if (ns.args.includes("--show")) {
+                    print(ns.codingcontract.getDescription(contract, server))
+                    print(ns.codingcontract.getData(contract, server))
+                }
             }
-        } else {
-            print(
-                `${contract}@${server}: New contract type: "${contractType}"`
-            )
-            if (ns.args.includes("--show")) {
-                print(ns.codingcontract.getDescription(contract, server))
-                print(ns.codingcontract.getData(contract, server))
-            }
+            await ns.sleep(5000)
         }
+
+        await ns.sleep(10000)
     }
 }
