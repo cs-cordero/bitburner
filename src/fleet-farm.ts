@@ -1,5 +1,5 @@
 import { NS } from "@ns"
-import { formulasApiActive, getPrintFunc, getTargetedScriptArgs, ProcessId, waitUntilPidsFinish } from "/lib/util";
+import { formulasApiActive, getPrintFunc, getTargetedScriptArgs, ProcessId, waitUntilPidsFinish } from "/lib/util"
 import {
     allocateFleetThreadsForScript,
     estimateGrowWeakenDistribution,
@@ -8,8 +8,8 @@ import {
     estimateHackWeakenDistributionSmart,
     estimateWeakenThreadToMinimize,
     executeScriptThreadAllocations,
-    getFleetThreadManifest
-} from "/lib/threads";
+    getFleetThreadManifest,
+} from "/lib/threads"
 
 const DEFAULT_THREADS = 4400
 
@@ -27,21 +27,27 @@ export async function main(ns: NS): Promise<void> {
             } else {
                 print(`sapping ${args.target}`)
                 const allocations = allocateFleetThreadsForScript(ns, "weaken.js", weakenThreadsNeeded)
-                await waitUntilPidsFinish(ns, executeScriptThreadAllocations(ns, args.target, allocations).filter(pid => pid !== 0))
+                await waitUntilPidsFinish(
+                    ns,
+                    executeScriptThreadAllocations(ns, args.target, allocations).filter((pid) => pid !== 0)
+                )
                 await ns.sleep(1000)
             }
         }
 
         // Grow-Weaken until money is maximized
         while (ns.getServerMoneyAvailable(args.target) < ns.getServerMaxMoney(args.target)) {
-            let growWeakenDistribution;
+            let growWeakenDistribution
             if (formulasApiActive(ns)) {
                 growWeakenDistribution = estimateGrowWeakenDistributionSmart(ns, args.target)
             } else {
                 growWeakenDistribution = estimateGrowWeakenDistribution(ns, args.threads ?? DEFAULT_THREADS)
             }
 
-            while (getFleetThreadManifest(ns).free < (growWeakenDistribution.growThreads + growWeakenDistribution.weakenThreads)) {
+            while (
+                getFleetThreadManifest(ns).free <
+                growWeakenDistribution.growThreads + growWeakenDistribution.weakenThreads
+            ) {
                 await ns.sleep(2500)
             }
 
@@ -56,30 +62,36 @@ export async function main(ns: NS): Promise<void> {
                         ns,
                         args.target,
                         allocateFleetThreadsForScript(ns, "grow.js", growWeakenDistribution.growThreads)
-                    ).forEach(pid => pids.push(pid))
+                    ).forEach((pid) => pids.push(pid))
                 }
                 if (growWeakenDistribution.weakenThreads) {
                     executeScriptThreadAllocations(
                         ns,
                         args.target,
                         allocateFleetThreadsForScript(ns, "weaken.js", growWeakenDistribution.weakenThreads)
-                    ).forEach(pid => pids.push(pid))
+                    ).forEach((pid) => pids.push(pid))
                 }
 
-                await waitUntilPidsFinish(ns, pids.filter(pid => pid !== 0))
+                await waitUntilPidsFinish(
+                    ns,
+                    pids.filter((pid) => pid !== 0)
+                )
             }
         }
 
         // Hack-Weaken until a successful hack occurs, stealing a nonzero amount of money.
         while (ns.getServerMoneyAvailable(args.target) >= ns.getServerMaxMoney(args.target)) {
-            let hackWeakenDistribution;
+            let hackWeakenDistribution
             if (formulasApiActive(ns)) {
                 hackWeakenDistribution = estimateHackWeakenDistributionSmart(ns, args.target)
             } else {
                 hackWeakenDistribution = estimateHackWeakenDistribution(ns, args.threads ?? DEFAULT_THREADS)
             }
 
-            while (getFleetThreadManifest(ns).free < (hackWeakenDistribution.hackThreads + hackWeakenDistribution.weakenThreads)) {
+            while (
+                getFleetThreadManifest(ns).free <
+                hackWeakenDistribution.hackThreads + hackWeakenDistribution.weakenThreads
+            ) {
                 await ns.sleep(2500)
             }
 
@@ -95,17 +107,20 @@ export async function main(ns: NS): Promise<void> {
                         ns,
                         args.target,
                         allocateFleetThreadsForScript(ns, "hack.js", hackWeakenDistribution.hackThreads)
-                    ).forEach(pid => pids.push(pid))
+                    ).forEach((pid) => pids.push(pid))
                 }
                 if (hackWeakenDistribution.weakenThreads) {
                     executeScriptThreadAllocations(
                         ns,
                         args.target,
                         allocateFleetThreadsForScript(ns, "weaken.js", hackWeakenDistribution.weakenThreads)
-                    ).forEach(pid => pids.push(pid))
+                    ).forEach((pid) => pids.push(pid))
                 }
 
-                await waitUntilPidsFinish(ns, pids.filter(pid => pid !== 0))
+                await waitUntilPidsFinish(
+                    ns,
+                    pids.filter((pid) => pid !== 0)
+                )
             }
         }
     }

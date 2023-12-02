@@ -7,5 +7,7 @@ export async function main(ns: NS): Promise<void> {
     ns.run("subscripts/monitor-fleet.js")
     ns.run("subscripts/monitor-home.js")
     ns.run("sync.js")
-    ns.run("contracts.js", undefined, "--submit")
+    ns.run("contracts.js", undefined, "--submit", "--silent")
+
+    ns.singularity.universityCourse("Rothman University", "Computer Science", false)
 }

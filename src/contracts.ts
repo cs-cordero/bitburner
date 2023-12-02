@@ -11,7 +11,7 @@ import { encryptionICaesarCipher } from "/contracts/contract-encryption-i-caesar
 import { encryptionIIVigenereCypher } from "/contracts/contract-encryption-ii-vigenere"
 import { findLargestPrimeFactor } from "/contracts/contract-find-largest-prime-factor"
 import { findValidMath } from "/contracts/contract-find-valid-math"
-import { getAllServers, getPrintFunc } from "/lib/util"
+import { getAllServers, getPrintFunc, shouldRunOnlyOnce } from "/lib/util"
 import { hammingCodesEncodedToInteger } from "/contracts/contract-hammingcodes-encoded-to-integer"
 import { hammingCodesIntegerToEncoded } from "/contracts/contract-hammingcodes-integer-to-encoded"
 import { mergeOverlappingIntervals } from "/contracts/contract-merge-overlapping-intervals"
@@ -24,9 +24,9 @@ import { subarrayWithMaximumSum } from "/contracts/contract-subarray-with-maximu
 import { totalWaysToSumII } from "/contracts/contract-total-ways-to-sum-ii"
 import { uniquePathsInAGridI } from "/contracts/contract-unique-paths-in-a-grid-i"
 import { uniquePathsInAGridII } from "/contracts/contract-unique-paths-in-a-grid-ii"
-import { generateIpAddresses } from "/contracts/contract-generate-ip-addresses";
-import { totalWaysToSumI } from "/contracts/contract-total-ways-to-sum-i";
-import { compressionIIILzCompression } from "/contracts/contract-compression-iii-lz-compression";
+import { generateIpAddresses } from "/contracts/contract-generate-ip-addresses"
+import { totalWaysToSumI } from "/contracts/contract-total-ways-to-sum-i"
+import { compressionIIILzCompression } from "/contracts/contract-compression-iii-lz-compression"
 
 const CONTRACT_TYPE_TO_SCRIPT: {
     [contractType: string]: ((ns: NS, input: any) => string) | undefined
@@ -89,11 +89,7 @@ export async function main(ns: NS): Promise<void> {
                 const answer = solver(ns, input)
 
                 if (ns.args.includes("--submit")) {
-                    const result = ns.codingcontract.attempt(
-                        answer,
-                        contract,
-                        server
-                    )
+                    const result = ns.codingcontract.attempt(answer, contract, server)
                     if (result === "") {
                         print(`Attempt with ${answer} failed. (${contractType})`)
                     } else {
@@ -107,15 +103,17 @@ export async function main(ns: NS): Promise<void> {
                     print(`    Attempts Remaining: ${ns.codingcontract.getNumTriesRemaining(contract, server)}`)
                 }
             } else {
-                print(
-                    `${contract}@${server}: New contract type: "${contractType}"`
-                )
+                print(`${contract}@${server}: New contract type: "${contractType}"`)
                 if (ns.args.includes("--show")) {
                     print(ns.codingcontract.getDescription(contract, server))
                     print(ns.codingcontract.getData(contract, server))
                 }
             }
             await ns.sleep(5000)
+        }
+
+        if (shouldRunOnlyOnce(ns)) {
+            break
         }
 
         await ns.sleep(10000)

@@ -22,9 +22,7 @@ export function compressionIILzDecompression(ns: NS, input: any): string {
                 const z = parseInt(compressed.shift()!)
                 if (z !== 0) {
                     for (let i = 0; i < l; i++) {
-                        uncompressed += uncompressed.charAt(
-                            uncompressed.length - z
-                        )
+                        uncompressed += uncompressed.charAt(uncompressed.length - z)
                     }
                 }
             }

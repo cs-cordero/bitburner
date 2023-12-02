@@ -1,10 +1,10 @@
 import { NS } from "@ns"
-import { getTargetableServers } from "/lib/util";
+import { getTargetableServers } from "/lib/util"
 import {
     allocateFleetThreadsForScript,
     estimateWeakenThreadToMinimize,
-    executeScriptThreadAllocations
-} from "/lib/threads";
+    executeScriptThreadAllocations,
+} from "/lib/threads"
 
 /**
  * Long-running process that tries to keep all pwned servers at their minimum security level.

@@ -1,5 +1,5 @@
 import { NS } from "@ns"
-import { getTargetedScriptArgs } from "/lib/util";
+import { getTargetedScriptArgs } from "/lib/util"
 
 export async function main(ns: NS): Promise<void> {
     const args = getTargetedScriptArgs(ns)

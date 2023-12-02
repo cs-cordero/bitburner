@@ -1,11 +1,5 @@
 import { NS } from "@ns"
-import {
-    formatMs,
-    getPrintFunc,
-    getPwndServers,
-    getScanScriptArgs,
-    waitUntilPidFinishes,
-} from "/lib/util"
+import { formatMs, getPrintFunc, getPwndServers, getScanScriptArgs, waitUntilPidFinishes } from "/lib/util"
 
 /**
  * Very early game dedicating 1000 threads to grow each server from the home server
@@ -17,16 +11,8 @@ export async function main(ns: NS): Promise<void> {
     const hostsNeedMustering =
         args.targets ??
         getPwndServers(ns)
-            .filter(
-                (hostname) =>
-                    ns.getServerSecurityLevel(hostname) <=
-                    ns.getServerMinSecurityLevel(hostname) + 1
-            )
-            .filter(
-                (hostname) =>
-                    ns.getServerMoneyAvailable(hostname) <
-                    ns.getServerMaxMoney(hostname)
-            )
+            .filter((hostname) => ns.getServerSecurityLevel(hostname) <= ns.getServerMinSecurityLevel(hostname) + 1)
+            .filter((hostname) => ns.getServerMoneyAvailable(hostname) < ns.getServerMaxMoney(hostname))
             .filter((hostname) => ns.getServerMaxMoney(hostname) > 0)
             .filter((hostname) => !hostname.startsWith("home"))
 
@@ -54,11 +40,7 @@ export async function main(ns: NS): Promise<void> {
             )
             if (pid !== 0) {
                 pids.push(pid)
-                print(
-                    `Mustering on ${hostname} PID ${pid} (${formatMs(
-                        growTime
-                    )})`
-                )
+                print(`Mustering on ${hostname} PID ${pid} (${formatMs(growTime)})`)
             }
             await ns.sleep(100)
         }

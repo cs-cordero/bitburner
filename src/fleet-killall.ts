@@ -14,9 +14,7 @@ export async function main(ns: NS): Promise<void> {
         ns.killall(hostname)
     }
 
-    const failedServers = pwndServers.filter(
-        (server) => ns.getServerUsedRam(server) > 0
-    )
+    const failedServers = pwndServers.filter((server) => ns.getServerUsedRam(server) > 0)
     if (failedServers.length === 0) {
         print("Killall succeeded")
     } else {

@@ -17,28 +17,19 @@ export function compressionIIILzCompression(ns: NS, input: any): string {
     let circuitBreaker = 0
 
     const seen: Set<string> = new Set()
-    const queue: PartialCompression[] = [
-        { compressed: "", compressionLength: 0, cycles: 0 },
-    ]
+    const queue: PartialCompression[] = [{ compressed: "", compressionLength: 0, cycles: 0 }]
     while (queue.length) {
         if (circuitBreaker++ > 50000) {
             ns.tprint(`Circuit Breaker tripped on ${uncompressed}`)
             ns.tprint(`${queue.length} items in the queue`)
 
-            const dedupedLength = [...new Set(queue.map((v) => v.compressed))]
-                .length
+            const dedupedLength = [...new Set(queue.map((v) => v.compressed))].length
             ns.tprint(`${dedupedLength} deduped items in the queue`)
 
-            const maxLength = queue
-                .map((v) => v.compressed.length)
-                .reduce((a, b) => Math.max(a, b))
-            ns.tprint(
-                `Longest compression ${maxLength} Original: ${uncompressed.length}`
-            )
+            const maxLength = queue.map((v) => v.compressed.length).reduce((a, b) => Math.max(a, b))
+            ns.tprint(`Longest compression ${maxLength} Original: ${uncompressed.length}`)
 
-            const maxCycles = queue
-                .map((v) => v.cycles)
-                .reduce((a, b) => Math.max(a, b))
+            const maxCycles = queue.map((v) => v.cycles).reduce((a, b) => Math.max(a, b))
             ns.tprint(`Most cycles ${maxCycles}`)
             break
         }
@@ -63,45 +54,31 @@ export function compressionIIILzCompression(ns: NS, input: any): string {
                     type1CompressionCandidates.push("0")
                 }
             } else {
-                type1CompressionCandidates.push(
-                    `${i}${uncompressed.slice(sliceStart, sliceEnd)}`
-                )
+                type1CompressionCandidates.push(`${i}${uncompressed.slice(sliceStart, sliceEnd)}`)
             }
         }
 
         // type 2 compression
         let combinedCandidates: PartialCompression[] = []
         for (const type1Candidate of type1CompressionCandidates) {
-            const type1CompressedLength =
-                current.compressionLength + parseInt(type1Candidate.charAt(0))
+            const type1CompressedLength = current.compressionLength + parseInt(type1Candidate.charAt(0))
             if (type1CompressedLength >= uncompressed.length) {
-                completedCompressions.push(
-                    `${current.compressed}${type1Candidate}`
-                )
+                completedCompressions.push(`${current.compressed}${type1Candidate}`)
                 continue
             }
 
-            const type2Candidates = determineBestType2Compression(
-                uncompressed,
-                type1CompressedLength
-            )
+            const type2Candidates = determineBestType2Compression(uncompressed, type1CompressedLength)
             if (type2Candidates.length) {
                 for (const type2Candidate of type2Candidates) {
-                    const type2CompressedLength = parseInt(
-                        type2Candidate.charAt(0)
-                    )
+                    const type2CompressedLength = parseInt(type2Candidate.charAt(0))
                     const compressed = `${current.compressed}${type1Candidate}${type2Candidate}`
 
-                    if (
-                        type1CompressedLength + type2CompressedLength >=
-                        uncompressed.length
-                    ) {
+                    if (type1CompressedLength + type2CompressedLength >= uncompressed.length) {
                         completedCompressions.push(compressed)
                     } else {
                         const newCompression: PartialCompression = {
                             compressed,
-                            compressionLength:
-                                type1CompressedLength + type2CompressedLength,
+                            compressionLength: type1CompressedLength + type2CompressedLength,
                             cycles: current.cycles + 1,
                         }
 
@@ -131,9 +108,7 @@ export function compressionIIILzCompression(ns: NS, input: any): string {
         const smallestCompression = completedCompressions
             .map((compression) => compression.length)
             .reduce((a, b) => Math.min(a, b))
-        const result = completedCompressions.filter(
-            (compression) => compression.length === smallestCompression
-        )
+        const result = completedCompressions.filter((compression) => compression.length === smallestCompression)
 
         return result[0]
     } else {
@@ -141,10 +116,7 @@ export function compressionIIILzCompression(ns: NS, input: any): string {
     }
 }
 
-function determineBestType2Compression(
-    uncompressed: string,
-    type2RightIndex: number
-) {
+function determineBestType2Compression(uncompressed: string, type2RightIndex: number) {
     if (type2RightIndex === 0) {
         return []
     }
@@ -156,10 +128,7 @@ function determineBestType2Compression(
         let left = type2RightIndex - leftStart
         let right = type2RightIndex
         let length = 0
-        while (
-            uncompressed.charAt(left) === uncompressed.charAt(right) &&
-            right < rightLimit
-        ) {
+        while (uncompressed.charAt(left) === uncompressed.charAt(right) && right < rightLimit) {
             left += 1
             right += 1
             length += 1

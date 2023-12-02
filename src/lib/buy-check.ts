@@ -6,14 +6,7 @@ import { formatNumber } from "/lib/util"
  */
 export function checkBuyServers(ns: NS) {
     const buyDetails = analyzeBuyDetails(ns)
-    const {
-        maximumReached,
-        recommendedCost,
-        recommendedRam,
-        nextRam,
-        nextCost,
-        ramToServerCount,
-    } = buyDetails
+    const { maximumReached, recommendedCost, recommendedRam, nextRam, nextCost, ramToServerCount } = buyDetails
 
     if (maximumReached && recommendedCost === 0) {
         ns.tprint("Maximum purchased server count and RAM achieved")
@@ -24,17 +17,11 @@ export function checkBuyServers(ns: NS) {
             .map(([ram, count]) => `${count} hosts at ${ram} RAM`)
             .join(", ")
         ns.tprint(ramDescription)
-        ns.tprint(
-            `Can buy/upgrade to ${recommendedRam} RAM at cost ${formatNumber(
-                recommendedCost
-            )}`
-        )
+        ns.tprint(`Can buy/upgrade to ${recommendedRam} RAM at cost ${formatNumber(recommendedCost)}`)
     }
 
     if (!maximumReached) {
-        ns.tprint(
-            `\tThe next RAM (${nextRam}) will cost ${formatNumber(nextCost)}`
-        )
+        ns.tprint(`\tThe next RAM (${nextRam}) will cost ${formatNumber(nextCost)}`)
     }
 }
 
@@ -53,9 +40,7 @@ export function analyzeBuyDetails(ns: NS): BuyDetails {
     const maxCountServersToPurchase = ns.getPurchasedServerLimit()
     const servers = ns.getPurchasedServers()
     const serversToBuy = maxCountServersToPurchase - servers.length
-    const existingServerMinRam = servers
-        .map((server) => ns.getServerMaxRam(server))
-        .reduce((a, b) => Math.min(a, b), 0)
+    const existingServerMinRam = servers.map((server) => ns.getServerMaxRam(server)).reduce((a, b) => Math.min(a, b), 0)
 
     let confirmedRam = existingServerMinRam
     let ramToEvaluate = Math.max(2, existingServerMinRam * 2)
@@ -63,15 +48,9 @@ export function analyzeBuyDetails(ns: NS): BuyDetails {
     let lastCostEvaluated = 0
     let maximumReached = false
     while (true) {
-        const costToPurchase =
-            ns.getPurchasedServerCost(ramToEvaluate) * serversToBuy
+        const costToPurchase = ns.getPurchasedServerCost(ramToEvaluate) * serversToBuy
         const costToUpgrade = servers
-            .map((server) =>
-                Math.max(
-                    0,
-                    ns.getPurchasedServerUpgradeCost(server, ramToEvaluate)
-                )
-            )
+            .map((server) => Math.max(0, ns.getPurchasedServerUpgradeCost(server, ramToEvaluate)))
             .reduce((a, b) => a + b, 0)
         const totalCost = costToUpgrade + costToPurchase
 

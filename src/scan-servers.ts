@@ -1,5 +1,12 @@
 import { NS } from "@ns"
-import { getAllServers, getPrintFunc, getScanScriptArgs } from "/lib/util"
+import {
+    getAllServers,
+    getPrintFunc,
+    parseArguments,
+    PositionalArgType,
+    ScriptArguments,
+    ScriptArgumentsSpec,
+} from "/lib/util"
 
 interface ServerInfo {
     hostname: string
@@ -7,15 +14,31 @@ interface ServerInfo {
     reqPorts: number
 }
 
+const ScanServerArgsSpec: ScriptArgumentsSpec = {
+    servers: {
+        type: "POSITIONAL",
+        argType: PositionalArgType.StringRest,
+        position: 0,
+        optional: true,
+    },
+    all: { type: "FLAG" },
+    "all-future": { type: "FLAG" },
+}
+
+interface ScanServerArgs extends ScriptArguments<typeof ScanServerArgsSpec> {
+    targets?: string[]
+    all: boolean
+    "all-future": boolean
+}
+
 /**
  * Prints the requirements for running NUKE.exe on certain servers, by default these are only the servers that
  * are missing root access.
  */
 export async function main(ns: NS): Promise<void> {
-    const args = getScanScriptArgs(ns)
-    const hostnamesToEvaluate =
-        args.targets ??
-        getAllServers(ns).filter((hostname) => !ns.hasRootAccess(hostname))
+    const args = parseArguments<typeof ScanServerArgsSpec, ScanServerArgs>(ns, ScanServerArgsSpec)
+
+    const hostnamesToEvaluate = args.targets ?? getAllServers(ns).filter((hostname) => !ns.hasRootAccess(hostname))
     const print = getPrintFunc(ns)
 
     const info: ServerInfo[] = []
@@ -33,27 +56,24 @@ export async function main(ns: NS): Promise<void> {
         }
     })
 
-    let infoToShow;
+    let infoToShow
     if (ns.args.includes("--all")) {
         infoToShow = info
     } else if (ns.args.includes("--all-future")) {
-        infoToShow = info.filter(inf => !ns.hasRootAccess(inf.hostname))
+        infoToShow = info.filter((inf) => !ns.hasRootAccess(inf.hostname))
     } else {
-        infoToShow = info.filter(inf => !ns.hasRootAccess(inf.hostname) && inf.reqHackingLevel - ns.getHackingLevel() <= 100)
+        infoToShow = info.filter(
+            (inf) => !ns.hasRootAccess(inf.hostname) && inf.reqHackingLevel - ns.getHackingLevel() <= 100
+        )
     }
 
     print("Server vulnerability information")
     for (const datum of infoToShow) {
-        if (
-            !ns.args.includes("--all") &&
-            datum.reqHackingLevel - ns.getHackingLevel() > 100
-        ) {
+        if (!ns.args.includes("--all") && datum.reqHackingLevel - ns.getHackingLevel() > 100) {
             continue
         }
         const hostname = datum.hostname.padEnd(18)
         const reqLevel = datum.reqHackingLevel.toString().padStart(4)
-        print(
-            `    ${hostname} Hacking Level: ${reqLevel} Ports: ${datum.reqPorts}`
-        )
+        print(`    ${hostname} Hacking Level: ${reqLevel} Ports: ${datum.reqPorts}`)
     }
 }

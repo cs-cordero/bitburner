@@ -1,6 +1,6 @@
 import { NS } from "@ns"
-import { getTargetableServers } from "/lib/util";
-import { getFleetThreadManifest } from "/lib/threads";
+import { formulasApiActive, getTargetableServers } from "/lib/util"
+import { getFleetThreadManifest } from "/lib/threads"
 
 export async function main(ns: NS): Promise<void> {
     const fleetThreads = getFleetThreadManifest(ns)
@@ -12,7 +12,17 @@ export async function main(ns: NS): Promise<void> {
 
     const servers = getTargetableServers(ns)
         .sort((a, b) => ns.getServerMaxMoney(b) - ns.getServerMaxMoney(a))
-        .filter(server => ns.getServerMaxMoney(server) > 0)
+        .filter((server) => ns.getServerMaxMoney(server) > 0)
+        .filter((server) => {
+            if (formulasApiActive(ns)) {
+                const serverData = ns.getServer(server)
+                serverData.hackDifficulty = serverData.minDifficulty!
+                const hackChance = ns.formulas.hacking.hackChance(serverData, ns.getPlayer())
+                return hackChance >= 0.9
+            } else {
+                return true
+            }
+        })
         .slice(0, maxServersToFarm)
 
     for (const server of servers) {

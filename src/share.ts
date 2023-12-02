@@ -1,7 +1,13 @@
 import { NS } from "@ns"
+import { getFlagOnlyArgs } from "/lib/util"
 
+/**
+ * Executes share() on a server.
+ */
 export async function main(ns: NS): Promise<void> {
-    if (ns.args.includes("--check")) {
+    const args = getFlagOnlyArgs(ns)
+
+    if (args.check) {
         ns.tprint(ns.getSharePower())
     } else {
         while (true) {

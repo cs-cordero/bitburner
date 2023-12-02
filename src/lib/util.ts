@@ -3,7 +3,7 @@ import { NS } from "@ns"
 /**
  * The prefix used when we purchase servers.
  */
-export const PURCHASED_SERVER_PREFIX = "owned"
+export const PURCHASED_SERVER_PREFIX = "home"
 
 export type ProcessId = number
 
@@ -15,10 +15,40 @@ export function isString(x: unknown): x is string {
 }
 
 /**
+ * Type guard for string with assertion
+ */
+export function assertIsString(x: unknown): x is string {
+    if (!isString(x)) {
+        throw new Error(`Expected value to be string but was ${x}`)
+    }
+
+    return true
+}
+
+/**
  * Type guard for number
  */
 export function isNumber(x: unknown): x is number {
     return typeof x === "number"
+}
+
+/**
+ * Type guard for number with assertion
+ */
+export function assertIsNumber(x: unknown): x is number {
+    if (!isNumber(x)) {
+        throw new Error(`Expected value to be number but was ${x}`)
+    }
+
+    return true
+}
+
+/**
+ * Exhaustive check helper
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function exhaustiveCheck(x: never): never {
+    throw new Error("Should be unreachable")
 }
 
 /**
@@ -142,7 +172,7 @@ export function getFleetServers(ns: NS): string[] {
  * Avoids using ns.getPurchasedServers() to keep RAM usage low.
  */
 export function getTargetableServers(ns: NS): string[] {
-    return getFleetServers(ns).filter(hostname => !hostname.startsWith(PURCHASED_SERVER_PREFIX))
+    return getFleetServers(ns).filter((hostname) => !hostname.startsWith(PURCHASED_SERVER_PREFIX))
 }
 
 /**
@@ -187,40 +217,6 @@ export function getPrintFunc(ns: NS): (arg: any) => void {
 }
 
 /**
- * For scripts that reference a target, they must involve an arg at position 0 representing the target
- * and an arg at position 1 representing the number of threads.
- */
-export interface TargetedScriptArgs {
-    target: string
-    threads: number
-}
-
-/**
- * Parses the script arguments for the {@link TargetedScriptArgs}.
- */
-export function getTargetedScriptArgs(ns: NS): TargetedScriptArgs {
-    const positionalArgs = ns.args.filter(
-        (arg) => !isString(arg) || !arg.startsWith("--")
-    )
-    const target = positionalArgs[0]
-    const threads = positionalArgs[1] ?? 1
-    const script = ns.getScriptName()
-
-    if (!isString(target)) {
-        throw Error(
-            `Attempted to run targeted script ${script}, but had invalid value for hostname at position 0. Args: ${ns.args}`
-        )
-    }
-    if (!isNumber(threads)) {
-        throw Error(
-            `Attempted to run targeted script ${script}, but had invalid value for threads at position 1. Args: ${ns.args}`
-        )
-    }
-
-    return { target, threads }
-}
-
-/**
  * For scripts that perform a scan on multiple targets, they optionally may restrict the scan to a set of hostnames.
  */
 export interface ScanScriptArgs {
@@ -232,9 +228,7 @@ export interface ScanScriptArgs {
  * Parses the script arguments for the {@link ScanScriptArgs}.
  */
 export function getScanScriptArgs(ns: NS): ScanScriptArgs {
-    const positionalArgs = ns.args.filter(
-        (arg) => isString(arg) && !arg.startsWith("--")
-    ) as string[]
+    const positionalArgs = ns.args.filter((arg) => isString(arg) && !arg.startsWith("--")) as string[]
 
     const args: ScanScriptArgs = {
         printDetailedInfo: ns.args.includes("--detail"),
@@ -245,7 +239,6 @@ export function getScanScriptArgs(ns: NS): ScanScriptArgs {
 
     return args
 }
-
 
 /**
  * Parses the script arguments for the presence of a flag that indicates a script should run only once.
@@ -261,24 +254,173 @@ export function formulasApiActive(ns: NS): boolean {
     return ns.fileExists("Formulas.exe", "home")
 }
 
-class ProcessWatcher {
-    readonly processes: Set<Process>
+/********************************************************************************************************************/
+/** ARGUMENT PARSING METHODS AND TYPES */
+/********************************************************************************************************************/
 
-    constructor() {
-        this.processes = new Set<Process>()
-    }
+export enum PositionalArgType {
+    String,
+    Number,
+    StringRest,
+}
 
-    watch(process: Process) {
-        this.processes.add(process)
-    }
+export interface PositionalArg {
+    type: "POSITIONAL"
+    position: number
+    argType: PositionalArgType
+    optional: boolean
+}
 
-    tick(ns: NS) {
-        const processesToRemove = []
-        for (const process of this.processes) {
-            if (!ns.isRunning(process.pid, process.hostname)) {
-                processesToRemove.push(process)
+export interface FlagArg {
+    type: "FLAG"
+}
+
+export type ScriptArgumentSpec = PositionalArg | FlagArg
+export type ScriptArgumentsSpec<ArgumentNames extends string> = Record<ArgumentNames, ScriptArgumentSpec>
+export type ScriptArguments<ArgumentNames extends string> = Record<ArgumentNames, string | number | boolean | string[] | undefined>
+
+export type TargetedScriptArgumentNames = "target" | "threads" | "once" | "silent"
+export type FlagOnlyScriptArgumentNames = "once" | "silent" | "check"
+
+export const TargetedScriptArgsSpec: ScriptArgumentsSpec<TargetedScriptArgumentNames> = {
+    target: {
+        type: "POSITIONAL",
+        position: 0,
+        argType: PositionalArgType.String,
+        optional: false,
+    },
+    threads: {
+        type: "POSITIONAL",
+        position: 1,
+        argType: PositionalArgType.Number,
+        optional: false,
+    },
+    once: { type: "FLAG" },
+    silent: { type: "FLAG" },
+}
+
+export const TargetedScriptArgsSpecOptionalThreads: ScriptArgumentsSpec<TargetedScriptArgumentNames> = {
+    target: {
+        type: "POSITIONAL",
+        position: 0,
+        argType: PositionalArgType.String,
+        optional: false,
+    },
+    threads: {
+        type: "POSITIONAL",
+        position: 1,
+        argType: PositionalArgType.Number,
+        optional: true,
+    },
+    once: { type: "FLAG" },
+    silent: { type: "FLAG" },
+}
+
+export interface TargetedScriptArgs extends ScriptArguments<TargetedScriptArgumentNames> {
+    target: string
+    threads: number
+    once: boolean
+    silent: boolean
+}
+
+export type TargetedScriptArgsOptionalThreads = Exclude<TargetedScriptArgs, "threads"> &
+    Partial<Pick<TargetedScriptArgs, "threads">>
+
+export const FlagOnlyArgsSpec: ScriptArgumentsSpec<FlagOnlyScriptArgumentNames> = {
+    check: { type: "FLAG" },
+    once: { type: "FLAG" },
+    silent: { type: "FLAG" },
+}
+
+export interface FlagOnlyArgs extends ScriptArguments<FlagOnlyScriptArgumentNames> {
+    check: boolean
+    once: boolean
+    silent: boolean
+}
+
+export function getTargetedArguments(ns: NS): TargetedScriptArgs {
+    return parseArguments<TargetedScriptArgumentNames, typeof TargetedScriptArgsSpec, TargetedScriptArgs>(ns, TargetedScriptArgsSpec)
+}
+
+export function getTargetedArgumentsOptionalThreads(ns: NS): TargetedScriptArgsOptionalThreads {
+    return parseArguments<TargetedScriptArgumentNames, typeof TargetedScriptArgsSpecOptionalThreads, TargetedScriptArgsOptionalThreads>(ns, TargetedScriptArgsSpecOptionalThreads)
+}
+
+export function getFlagOnlyArgs(ns: NS): FlagOnlyArgs {
+    return parseArguments<FlagOnlyScriptArgumentNames, typeof FlagOnlyArgsSpec, FlagOnlyArgs>(ns, FlagOnlyArgsSpec)
+}
+
+export function parseArguments<
+    T extends string,
+    U extends ScriptArgumentsSpec<T>,
+    V extends ScriptArguments<T>,
+>(ns: NS, input: U): V {
+    validatePositionalArguments(input)
+
+    const parsedArguments: { [name: string]: string | number | boolean | string[] | undefined } = {}
+
+    const positionalArgsSpec = Object.entries(input)
+        .filter(([, spec]) => spec.type === "POSITIONAL")
+        .map(([name, arg]) => [name, arg] as [string, PositionalArg])
+    const providedPositionalArgs = ns.args.filter((arg) => !isString(arg) || !arg.startsWith("--"))
+
+    positionalArgsSpec.forEach(([name, arg]) => {
+        const rawProvided = providedPositionalArgs[arg.position]
+        if (rawProvided === undefined) {
+            if (arg.optional) {
+                parsedArguments[name] = undefined
+                return
+            } else {
+                throw new Error(`Invalid argument at position ${arg.position}: ${rawProvided}`)
             }
         }
-        processesToRemove.forEach(process => this.processes.delete(process))
-    }
+
+        let argument: string | number | string[]
+        switch (arg.argType) {
+            case PositionalArgType.String:
+                assertIsString(rawProvided)
+                argument = rawProvided as string
+                break
+            case PositionalArgType.Number:
+                assertIsNumber(rawProvided)
+                argument = rawProvided as number
+                break
+            case PositionalArgType.StringRest:
+                argument = providedPositionalArgs.slice(arg.position).map((arg) => arg.toString())
+                break
+            default:
+                exhaustiveCheck(arg.argType)
+        }
+        parsedArguments[name] = argument
+    })
+
+    const flagArgs = Object.entries(input)
+        .filter(([, spec]) => spec.type === "FLAG")
+        .map(([name]) => name)
+    flagArgs.forEach((arg) => (parsedArguments[arg] = ns.args.includes(`--${arg}`)))
+
+    return parsedArguments as V
+}
+
+/**
+ * Ensures the subset of arguments defined in the spec
+ * @param input
+ */
+function validatePositionalArguments<T extends ScriptArgumentsSpec>(input: T) {
+    const positionalArgsSpec = Object.values(input)
+        .filter((arg) => arg.type === "POSITIONAL")
+        .map((arg) => arg as PositionalArg)
+
+    const positions = positionalArgsSpec.map((arg) => arg.position)
+
+    const lowestPosition = positions.reduce((a, b) => Math.min(a, b))
+    const highestPosition = positions.reduce((a, b) => Math.max(a, b))
+
+    const restPositions = positionalArgsSpec.filter((arg) => arg.argType === PositionalArgType.StringRest)
+
+    console.assert(positions.length === new Set(positions).size) // no dupes
+    console.assert(lowestPosition === 0) // begins at 0
+    console.assert(highestPosition === positions.length - 1) // contiguous
+    console.assert(restPositions.length <= 1)
+    console.assert(restPositions.length === 0 || restPositions[0].position === positions.length - 1)
 }

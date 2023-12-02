@@ -355,55 +355,13 @@
   * Embedded Netburner Module Core V3 Upgrade (HACK,HACK_CHANCE,HACK_EXP,HACK_MONEY,SPEED) price: 7.500b rep: 1.750m
 
 
-## Factions
+## Fresh Start Walkthrough
 
-### Early Game
-
-#### CyberSec
-  * Neurotrainer I (ALL) ****************************
-  * Cranial Signal Processors - Gen I (HACK, GROW, WEAKEN) ****************************
-  * Cranial Signal Processors - Gen II (HACK, GROW, WEAKEN) ****************************
-  * Synaptic Enhancement Implant (HACK, GROW, WEAKEN) ****************************
-  * BitWire (HACK) ****************************
-#### Tian Di Hui
-  * Neuroreceptor Management Implant (Always FOCUSED) ******************************
-  * Social Negotiation Assistant (S.N.A) (REP) *********************************
-#### Sector-12 and Aevum
-#### Chongqing, New Tokyo, and Ishima
-  * Neuregen Gene Modification (HACKING EXP)
-#### Volhaven
-
-### Corpos
-#### ECorp
-#### MegaCorp
-#### KuaiGong International
-#### Four Sigma
-#### NWO
-  * Xanipher (ALL): $4.25b 875.0k rep **************************
-  * Hydroflame Left Arm (STR): $2.5t 1.250m rep
-#### Blade Industries
-#### OmniTek Incorporated
-#### Bachman & Associates
-#### Clarke Incorporated
-#### Fulcrum Secret Technologies
-
-
-### Crime
-
-#### Slum Snakes
-  * SmartSonar Implant (DEF)
-#### Tetrads
-  * Bionic Arms (STR, DEF)
-#### The Syndicate
-  * BrachiBlades (STR, DEF, CRIME)
-#### The Dark Army
-  * Graphene Bionic Arms (STR, DEF): $3.75b 500.0k rep
-#### Speakers for the Dead
-  * Unstable Circadian Modulator (HACKNET): $5b 362.5k rep
-  * Graphene BrachjiBlades (STR, DEF, CRIME): $2.5b 225.0k rep
-
-### Special
-#### Netburners
-* All are HACKNET related
-#### Shadows of Anarchy
-* All are infiltration related
+1. Early Game
+   * We can nuke through harakiri-sushi with 40 hack 0 ports
+   * Farm down n00dles and raise hack skill until we can do that, then start fleet-farming n00dles.
+     * Don't even try to go for `foodnstuff` at this point, it takes way too long to grow() it.
+   * Once we have 40 Hack skill, start creating BruteSSH.exe to pwn more servers and acquire more RAM for the fleet
+   * Once Brute.SSH is done, pwn-servers again, then backdoor CSEC and join them immediately. Start hacking contracts.
+   * Keep fleet-farming n00dles.js and buy/upgrading purchased servers.
+   

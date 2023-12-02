@@ -5,7 +5,7 @@ import { getTargetedScriptArgs } from "/lib/util"
  * Prints the server path to reach a target.
  */
 export async function main(ns: NS): Promise<void> {
-    const args = getTargetedScriptArgs(ns)
+    const args = getTargetedScriptArgs(ns, false)
 
     ns.tprint(findPathFromHome(ns, args.target).join("->"))
 }

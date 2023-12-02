@@ -1,11 +1,11 @@
 import { NS } from "@ns"
-import { formatMs, getPrintFunc, getTargetedScriptArgs, round, shouldRunOnlyOnce, } from "/lib/util"
+import { formatMs, getPrintFunc, getTargetedScriptArgs, round, shouldRunOnlyOnce } from "/lib/util"
 
 /**
  * Runs grow() on a target server.
  */
 export async function main(ns: NS): Promise<void> {
-    const args = getTargetedScriptArgs(ns)
+    const args = getTargetedScriptArgs(ns, false)
     const print = getPrintFunc(ns)
 
     while (true) {

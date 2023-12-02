@@ -7,9 +7,7 @@ export function sanitizeParentheses(ns: NS, input: any): string {
     const original = (input as string).split("")
 
     const potentialFixes = fix(ns, original, 0, [], 0, 0)
-    const minRemovals = potentialFixes
-        .map((fix) => fix.removals)
-        .reduce((a, b) => Math.min(a, b))
+    const minRemovals = potentialFixes.map((fix) => fix.removals).reduce((a, b) => Math.min(a, b))
 
     const fixes = potentialFixes
         .filter((fix) => fix.removals === minRemovals)
@@ -53,29 +51,13 @@ function fix(
 
     if (!mustSkip) {
         // remove the character
-        result.push(
-            ...fix(ns, s, index + 1, [...fixed], openCount, removals + 1)
-        )
+        result.push(...fix(ns, s, index + 1, [...fixed], openCount, removals + 1))
     }
 
     if (!mustRemove) {
-        const newOpenCount =
-            currentChar === "("
-                ? openCount + 1
-                : currentChar === ")"
-                  ? openCount - 1
-                  : openCount
+        const newOpenCount = currentChar === "(" ? openCount + 1 : currentChar === ")" ? openCount - 1 : openCount
         // keep the character
-        result.push(
-            ...fix(
-                ns,
-                s,
-                index + 1,
-                [...fixed, s[index]],
-                newOpenCount,
-                removals
-            )
-        )
+        result.push(...fix(ns, s, index + 1, [...fixed, s[index]], newOpenCount, removals))
     }
 
     return result

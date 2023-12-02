@@ -15,46 +15,27 @@ import {
  * Distributes load to pwned servers based using a thread allocation.
  */
 export async function main(ns: NS): Promise<void> {
-    const memCost = Math.max(
-        ns.getScriptRam("grow.js"),
-        ns.getScriptRam("weaken.js")
-    )
+    const memCost = Math.max(ns.getScriptRam("grow.js"), ns.getScriptRam("weaken.js"))
     const print = getPrintFunc(ns)
 
     if (formulasApiActive(ns)) {
-        print(
-            `Formulas API is active! AI-GROW will allocate the accurate amount of threads per target.`
-        )
+        print(`Formulas API is active! AI-GROW will allocate the accurate amount of threads per target.`)
 
         const activeProcs: Set<Process> = new Set()
         while (true) {
-            const finishedProcs = [...activeProcs].filter(
-                (proc) => !ns.isRunning(proc.pid, proc.hostname)
-            )
+            const finishedProcs = [...activeProcs].filter((proc) => !ns.isRunning(proc.pid, proc.hostname))
             finishedProcs.forEach((proc) => activeProcs.delete(proc))
 
-            const alreadyTargetedHosts = [...activeProcs].map(
-                (proc) => proc.target!
-            )
+            const alreadyTargetedHosts = [...activeProcs].map((proc) => proc.target!)
             const candidateServers = getPwndServers(ns)
                 .filter((hostname) => !alreadyTargetedHosts.includes(hostname))
-                .filter(
-                    (hostname) =>
-                        ns.getServerMoneyAvailable(hostname) <
-                        ns.getServerMaxMoney(hostname)
-                )
-                .filter(
-                    (hostname) => !ns.getPurchasedServers().includes(hostname)
-                )
+                .filter((hostname) => ns.getServerMoneyAvailable(hostname) < ns.getServerMaxMoney(hostname))
+                .filter((hostname) => !ns.getPurchasedServers().includes(hostname))
                 .filter((hostname) => hostname !== "home")
 
             for (const candidateServer of candidateServers) {
                 const threadsInFleet = getPwndServers(ns)
-                    .map(
-                        (hostname) =>
-                            ns.getServerMaxRam(hostname) -
-                            ns.getServerUsedRam(hostname)
-                    )
+                    .map((hostname) => ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname))
                     .map((freeRam) => Math.floor(freeRam / memCost))
                     .reduce((a, b) => a + b, 0)
 
@@ -71,10 +52,7 @@ export async function main(ns: NS): Promise<void> {
                     growThreadsNeeded = threadsInFleet
                     weakenThreadsNeeded = Math.ceil(growThreadsNeeded / 9)
                     threadsNeeded = growThreadsNeeded + weakenThreadsNeeded
-                    while (
-                        threadsNeeded > threadsInFleet &&
-                        growThreadsNeeded > 0
-                    ) {
+                    while (threadsNeeded > threadsInFleet && growThreadsNeeded > 0) {
                         growThreadsNeeded -= 1
                         weakenThreadsNeeded = Math.ceil(growThreadsNeeded / 9)
                         threadsNeeded = growThreadsNeeded + weakenThreadsNeeded
@@ -103,13 +81,9 @@ export async function main(ns: NS): Promise<void> {
         }
         const desiredHostCount = ns.args[1]
         if (!isNumber(desiredHostCount)) {
-            throw Error(
-                "Second argument to ai-grow should be the number of host you want to grow concurrently."
-            )
+            throw Error("Second argument to ai-grow should be the number of host you want to grow concurrently.")
         }
-        const approximateThreadsPerTarget = Math.floor(
-            desiredThreadCount / desiredHostCount
-        )
+        const approximateThreadsPerTarget = Math.floor(desiredThreadCount / desiredHostCount)
 
         print(`Desired thread count is ${desiredThreadCount}.`)
         print(`Desired host count is ${desiredHostCount}.`)
@@ -134,19 +108,11 @@ export async function main(ns: NS): Promise<void> {
             procsToRemove.forEach((proc) => targeted.delete(proc))
 
             // try to open new procs if possible
-            const alreadyTargetedHosts = [
-                ...new Set([...targeted.values()].map((proc) => proc.target!)),
-            ]
+            const alreadyTargetedHosts = [...new Set([...targeted.values()].map((proc) => proc.target!))]
             const targets = getPwndServers(ns)
                 .filter((hostname) => !alreadyTargetedHosts.includes(hostname))
-                .filter(
-                    (hostname) =>
-                        ns.getServerMoneyAvailable(hostname) <
-                        ns.getServerMaxMoney(hostname)
-                )
-                .filter(
-                    (hostname) => !ns.getPurchasedServers().includes(hostname)
-                )
+                .filter((hostname) => ns.getServerMoneyAvailable(hostname) < ns.getServerMaxMoney(hostname))
+                .filter((hostname) => !ns.getPurchasedServers().includes(hostname))
                 .filter((hostname) => hostname !== "home")
 
             targets.sort(
@@ -157,23 +123,12 @@ export async function main(ns: NS): Promise<void> {
 
             for (const target of targets) {
                 const threadsInFleet = getPwndServers(ns)
-                    .map(
-                        (hostname) =>
-                            ns.getServerMaxRam(hostname) -
-                            ns.getServerUsedRam(hostname)
-                    )
+                    .map((hostname) => ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname))
                     .map((freeRam) => Math.floor(freeRam / memCost))
                     .reduce((a, b) => a + b, 0)
 
-                if (
-                    Math.min(remainingThreads, threadsInFleet) <
-                    approximateThreadsPerTarget
-                ) {
-                    const hostCount = [
-                        ...new Set(
-                            [...targeted.values()].map((proc) => proc.target!)
-                        ),
-                    ].length
+                if (Math.min(remainingThreads, threadsInFleet) < approximateThreadsPerTarget) {
+                    const hostCount = [...new Set([...targeted.values()].map((proc) => proc.target!))].length
                     if (hostCount < desiredHostCount) {
                         print(`[AI-GROW] No resources available!`)
                     }
@@ -187,21 +142,13 @@ export async function main(ns: NS): Promise<void> {
                 ) {
                     threadsToUse = Math.min(remainingThreads, threadsInFleet)
                 } else {
-                    threadsToUse = Math.min(
-                        approximateThreadsPerTarget,
-                        threadsInFleet
-                    )
+                    threadsToUse = Math.min(approximateThreadsPerTarget, threadsInFleet)
                 }
 
                 const growThreads = getNumberOfGrowThreads(threadsToUse, 9)
                 const weakenThreads = threadsToUse - growThreads
 
-                const createdProcs = executeGrowAndWeaken(
-                    ns,
-                    target,
-                    growThreads,
-                    weakenThreads
-                )
+                const createdProcs = executeGrowAndWeaken(ns, target, growThreads, weakenThreads)
                 createdProcs.forEach((proc) => {
                     targeted.add(proc)
                     remainingThreads -= proc.threads
@@ -213,12 +160,7 @@ export async function main(ns: NS): Promise<void> {
     }
 }
 
-function executeGrowAndWeaken(
-    ns: NS,
-    target: string,
-    growThreads: number,
-    weakenThreads: number
-): Process[] {
+function executeGrowAndWeaken(ns: NS, target: string, growThreads: number, weakenThreads: number): Process[] {
     const print = getPrintFunc(ns)
 
     const growProcsCreated: Process[] = []
@@ -227,48 +169,22 @@ function executeGrowAndWeaken(
     const growAllocation = allocateThreadsForScript(ns, "grow.js", growThreads)
     growAllocation.forEach((alloc) => {
         const { threads, hostname, scriptName } = alloc
-        const pid = ns.exec(
-            scriptName,
-            hostname,
-            { threads },
-            target,
-            threads,
-            "--silent",
-            "--once"
-        )
+        const pid = ns.exec(scriptName, hostname, { threads }, target, threads, "--silent", "--once")
         const proc = { pid, hostname, threads, target }
         growProcsCreated.push(proc)
     })
 
     // this allocation must occur after the grow exec() calls.
-    const weakenAllocation = allocateThreadsForScript(
-        ns,
-        "weaken.js",
-        weakenThreads
-    )
+    const weakenAllocation = allocateThreadsForScript(ns, "weaken.js", weakenThreads)
     weakenAllocation.forEach((alloc) => {
         const { threads, hostname, scriptName } = alloc
-        const pid = ns.exec(
-            scriptName,
-            hostname,
-            { threads },
-            target,
-            threads,
-            "--silent",
-            "--once"
-        )
+        const pid = ns.exec(scriptName, hostname, { threads }, target, threads, "--silent", "--once")
         const proc = { pid, hostname, threads, target }
         weakenProcsCreated.push(proc)
     })
 
-    const expectedTime = formatMs(
-        Math.max(ns.getWeakenTime(target), ns.getGrowTime(target))
-    )
-    const hostCount = new Set(
-        [...growProcsCreated, ...weakenProcsCreated].map(
-            (proc) => proc.hostname
-        )
-    ).size
+    const expectedTime = formatMs(Math.max(ns.getWeakenTime(target), ns.getGrowTime(target)))
+    const hostCount = new Set([...growProcsCreated, ...weakenProcsCreated].map((proc) => proc.hostname)).size
     print(`[AI-GROW] Target ${target}: Orchestration information`)
     print(
         `    Using ${

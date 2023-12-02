@@ -28,16 +28,12 @@ export async function main(ns: NS): Promise<void> {
         const totalBuyCost = perServerCost * countToBuy
         const totalUpgradeCost = ns
             .getPurchasedServers()
-            .map((server) =>
-                Math.max(0, ns.getPurchasedServerUpgradeCost(server, ram))
-            )
+            .map((server) => Math.max(0, ns.getPurchasedServerUpgradeCost(server, ram)))
             .reduce((a, b) => a + b, 0)
         const totalCost = totalBuyCost + totalUpgradeCost
 
         if (ns.getPlayer().money < totalCost && !allowPartialUpgrade) {
-            print(
-                `Not enough money to buy/upgrade fleet standardized to ${ram} RAM.`
-            )
+            print(`Not enough money to buy/upgrade fleet standardized to ${ram} RAM.`)
             print(`Buy cost: ${totalBuyCost} Upgrade cost: ${totalUpgradeCost}`)
             return
         } else {
@@ -54,10 +50,7 @@ export async function main(ns: NS): Promise<void> {
                 }
             })()
 
-            while (
-                ns.getPlayer().money >= perServerCost &&
-                ns.getPurchasedServers().length < purchasedServerLimit
-            ) {
+            while (ns.getPlayer().money >= perServerCost && ns.getPurchasedServers().length < purchasedServerLimit) {
                 const serverNum = getNextServerNumber()
                 ns.purchaseServer(`home-${serverNum}`, ram)
                 print(`Acquired home-${serverNum}.`)
@@ -68,10 +61,7 @@ export async function main(ns: NS): Promise<void> {
                     continue
                 }
 
-                const upgradeCost = ns.getPurchasedServerUpgradeCost(
-                    server,
-                    ram
-                )
+                const upgradeCost = ns.getPurchasedServerUpgradeCost(server, ram)
                 if (ns.getPlayer().money >= upgradeCost) {
                     ns.upgradePurchasedServer(server, ram)
                     print(`Upgraded ${server} to ${ram}GB.`)

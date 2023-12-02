@@ -31,8 +31,6 @@ export function mergeOverlappingIntervals(ns: NS, input: any): string {
     }
     mergedIntervals.push([start, end])
 
-    const merged = mergedIntervals
-        .map(([start, end]) => `[${start},${end}]`)
-        .join(",")
+    const merged = mergedIntervals.map(([start, end]) => `[${start},${end}]`).join(",")
     return `[${merged}]`
 }

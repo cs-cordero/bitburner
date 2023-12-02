@@ -15,10 +15,7 @@ export function encryptionICaesarCipher(ns: NS, input: any): string {
                 .split("")
                 .map((char) => char.charCodeAt(0))
                 .map((charCode) => charCode - LOWEST_ORD)
-                .map(
-                    (charCode) =>
-                        charCode - caesarShift + HIGHEST_ORD - LOWEST_ORD + 1
-                )
+                .map((charCode) => charCode - caesarShift + HIGHEST_ORD - LOWEST_ORD + 1)
                 .map((charCode) => charCode % (HIGHEST_ORD - LOWEST_ORD + 1))
                 .map((charCode) => charCode + LOWEST_ORD)
                 .map((charCode) => String.fromCharCode(charCode))

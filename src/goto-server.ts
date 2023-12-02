@@ -1,12 +1,12 @@
 import { NS } from "@ns"
-import { findPathFromHome } from "/scan-hostpath";
-import { getTargetedScriptArgs } from "/lib/util";
+import { findPathFromHome } from "/scan-hostpath"
+import { getTargetedScriptArgs } from "/lib/util"
 
 /**
  * Backdoors specific servers for game progress.
  */
 export async function main(ns: NS): Promise<void> {
-    const args = getTargetedScriptArgs(ns)
+    const args = getTargetedScriptArgs(ns, false)
 
     ns.tprint(`Connecting to ${args.target} from home`)
     ns.singularity.connect("home")

@@ -24,13 +24,15 @@ export async function main(ns: NS): Promise<void> {
 export function getNukableHosts(ns: NS) {
     const programs = getVulnerabilityPrograms(ns)
 
-    return getAllServers(ns)
-        // we don't have root access to it yet
-        .filter((hostname) => !ns.hasRootAccess(hostname))
-        // we can hack it
-        .filter((hostname) => ns.getServerRequiredHackingLevel(hostname) <= ns.getHackingLevel())
-        // we can open enough ports
-        .filter((hostname) => ns.getServerNumPortsRequired(hostname) <= programs.length)
+    return (
+        getAllServers(ns)
+            // we don't have root access to it yet
+            .filter((hostname) => !ns.hasRootAccess(hostname))
+            // we can hack it
+            .filter((hostname) => ns.getServerRequiredHackingLevel(hostname) <= ns.getHackingLevel())
+            // we can open enough ports
+            .filter((hostname) => ns.getServerNumPortsRequired(hostname) <= programs.length)
+    )
 }
 
 function getVulnerabilityPrograms(ns: NS) {

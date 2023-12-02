@@ -19,13 +19,7 @@ export function findValidMath(ns: NS, input: any): string {
     return `[${dedupedAnswer}]`
 }
 
-function chopNumbers(
-    ns: NS,
-    digits: number[],
-    index: number,
-    currentChop: number[],
-    result: number[][]
-): void {
+function chopNumbers(ns: NS, digits: number[], index: number, currentChop: number[], result: number[][]): void {
     if (index >= digits.length) {
         result.push(currentChop)
         return
@@ -51,14 +45,7 @@ function chopNumbers(
     }
 }
 
-function helper(
-    ns: NS,
-    numbers: number[],
-    target: number,
-    index: number,
-    current: string,
-    result: string[]
-) {
+function helper(ns: NS, numbers: number[], target: number, index: number, current: string, result: string[]) {
     if (index >= numbers.length) {
         const value = eval(current)
         if (value === target) {
@@ -71,29 +58,8 @@ function helper(
     if (current === "") {
         helper(ns, numbers, target, index + 1, `${nextNumber}`, result)
     } else {
-        helper(
-            ns,
-            numbers,
-            target,
-            index + 1,
-            `${current}+${nextNumber}`,
-            result
-        )
-        helper(
-            ns,
-            numbers,
-            target,
-            index + 1,
-            `${current}-${nextNumber}`,
-            result
-        )
-        helper(
-            ns,
-            numbers,
-            target,
-            index + 1,
-            `${current}*${nextNumber}`,
-            result
-        )
+        helper(ns, numbers, target, index + 1, `${current}+${nextNumber}`, result)
+        helper(ns, numbers, target, index + 1, `${current}-${nextNumber}`, result)
+        helper(ns, numbers, target, index + 1, `${current}*${nextNumber}`, result)
     }
 }

@@ -7,10 +7,7 @@ export async function main(ns: NS): Promise<void> {
     const totalServerCount = getPwndServers(ns)
         .filter((server) => !ns.getPurchasedServers().includes(server))
         .filter((server) => server !== "home").length
-    const hostsToTarget = Math.min(
-        totalServerCount,
-        Math.max(Math.floor(threadsToUse / 1000), 2)
-    )
+    const hostsToTarget = Math.min(totalServerCount, Math.max(Math.floor(threadsToUse / 1000), 2))
 
     const args = ns.args.includes("--silent") ? ["--silent"] : []
     ns.run("ai-weaken.js", undefined, ...args)
@@ -27,23 +24,14 @@ interface FleetThreadCount {
     max: number
 }
 
-export function calculateFleetThreads(
-    ns: NS,
-    targets: string[]
-): FleetThreadCount {
-    const memCost = Math.max(
-        ns.getScriptRam("weaken.js"),
-        ns.getScriptRam("grow.js")
-    )
+export function calculateFleetThreads(ns: NS, targets: string[]): FleetThreadCount {
+    const memCost = Math.max(ns.getScriptRam("weaken.js"), ns.getScriptRam("grow.js"))
     const threadsMax = targets
         .map((hostname) => ns.getServerMaxRam(hostname))
         .map((ram) => Math.floor(ram / memCost))
         .reduce((a, b) => a + b, 0)
     const threadsActual = targets
-        .map(
-            (hostname) =>
-                ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname)
-        )
+        .map((hostname) => ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname))
         .map((ram) => Math.floor(ram / memCost))
         .reduce((a, b) => a + b, 0)
 

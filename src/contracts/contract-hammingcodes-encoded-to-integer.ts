@@ -32,9 +32,7 @@ interface HammingCodeStructure {
     dataBits: number[]
 }
 
-function determineHammingCodeStructure(
-    binaryString: string
-): HammingCodeStructure {
+function determineHammingCodeStructure(binaryString: string): HammingCodeStructure {
     const dataBits = []
     const parityBits = []
 

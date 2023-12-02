@@ -1,16 +1,16 @@
 import { NS } from "@ns"
-import { getPwndServers } from "/lib/util"
+import { getFlagOnlyArgs, getPwndServers } from "/lib/util"
 
 /**
  * Syncs all the scripts on the home computer to all the pwnd servers.
  */
 export async function main(ns: NS): Promise<void> {
+    const args = getFlagOnlyArgs(ns)
+
     while (true) {
         for (const pwndServer of getPwndServers(ns)) {
             // send all files on home to the server.
-            const homeFiles = ns
-                .ls("home")
-                .filter((fileName) => fileName.endsWith(".js"))
+            const homeFiles = ns.ls("home").filter((fileName) => fileName.endsWith(".js"))
             ns.scp(homeFiles, pwndServer)
 
             // remove files that dont exist on home
@@ -20,7 +20,7 @@ export async function main(ns: NS): Promise<void> {
                 .forEach((fileName) => ns.rm(fileName, pwndServer))
         }
 
-        if (ns.args.includes("--once")) {
+        if (args.once) {
             break
         }
 

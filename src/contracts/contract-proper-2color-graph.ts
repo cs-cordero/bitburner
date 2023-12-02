@@ -4,10 +4,7 @@ import { NS } from "@ns"
  * Proper 2-Coloring of a Graph
  */
 export function proper2ColoringOfGraph(ns: NS, input: any): string {
-    const raw: [number, [number, number][]] = input as [
-        number,
-        [number, number][],
-    ]
+    const raw: [number, [number, number][]] = input as [number, [number, number][]]
 
     const [vertexCount, edges] = raw
 

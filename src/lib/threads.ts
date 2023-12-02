@@ -1,5 +1,5 @@
-import { NS } from "@ns";
-import { formulasApiActive, getAllServers, getFleetServers, getPwndServers, ProcessId } from "/lib/util";
+import { NS } from "@ns"
+import { formulasApiActive, getAllServers, getFleetServers, getPwndServers, ProcessId } from "/lib/util"
 
 const CANONICAL_SCRIPT_LOCATION = "home"
 
@@ -49,7 +49,7 @@ export function getMemCost(ns: NS): number {
 export function getHomeThreadManifest(ns: NS): ThreadManifest {
     return {
         manifestType: "HOME",
-        ...getThreadManifest(ns, ["home"])
+        ...getThreadManifest(ns, ["home"]),
     }
 }
 
@@ -59,7 +59,7 @@ export function getHomeThreadManifest(ns: NS): ThreadManifest {
 export function getFleetThreadManifest(ns: NS): ThreadManifest {
     return {
         manifestType: "FLEET",
-        ...getThreadManifest(ns)
+        ...getThreadManifest(ns),
     }
 }
 
@@ -123,14 +123,14 @@ export function countIncomingThreadsFor(ns: NS, targetedHost: string): IncomingT
  * Queries the processes across all servers and counts the number of hack(), grow(), and weaken() threads
  * targeting a particular host.
  */
-export function countIncomingThreads(ns: NS): {[hostname: string]: IncomingThreadCounts} {
-    const result: {[hostname: string]: IncomingThreadCounts} = {}
+export function countIncomingThreads(ns: NS): { [hostname: string]: IncomingThreadCounts } {
+    const result: { [hostname: string]: IncomingThreadCounts } = {}
 
     getAllServers(ns)
-        .filter(hostname => ns.hasRootAccess(hostname))
-        .flatMap(hostname => ns.ps(hostname))
-        .filter(procInfo => ["hack.js", "grow.js", "weaken.js"].includes(procInfo.filename))
-        .forEach(procInfo => {
+        .filter((hostname) => ns.hasRootAccess(hostname))
+        .flatMap((hostname) => ns.ps(hostname))
+        .filter((procInfo) => ["hack.js", "grow.js", "weaken.js"].includes(procInfo.filename))
+        .forEach((procInfo) => {
             const targetedHost = procInfo.args[0] as string
             if (result[targetedHost] === undefined) {
                 result[targetedHost] = { incomingGrow: 0, incomingHack: 0, incomingWeaken: 0 }
@@ -191,7 +191,8 @@ export function estimateWeakenThreadToMinimize(ns: NS, hostname: string): number
     const securityLevelFromWeaken = incomingThreads.incomingWeaken * 0.05
 
     const minSecurityLevel = ns.getServerMinSecurityLevel(hostname)
-    const expectedSecurityLevel = currentSecurityLevel + securityLevelFromHack + securityLevelFromGrow - securityLevelFromWeaken
+    const expectedSecurityLevel =
+        currentSecurityLevel + securityLevelFromHack + securityLevelFromGrow - securityLevelFromWeaken
     const securityLevelToReduce = expectedSecurityLevel - minSecurityLevel
     return Math.ceil(securityLevelToReduce / 0.05)
 }
@@ -226,12 +227,9 @@ export function estimateGrowWeakenDistributionSmart(ns: NS, target: string): Gro
         throw new Error("Smart functions require that the Formulas API be accessible")
     }
 
-    const growThreads = Math.ceil(ns.formulas.hacking.growThreads(
-        ns.getServer(target),
-        ns.getPlayer(),
-        ns.getServerMaxMoney(target),
-        1
-    ))
+    const growThreads = Math.ceil(
+        ns.formulas.hacking.growThreads(ns.getServer(target), ns.getPlayer(), ns.getServerMaxMoney(target), 1)
+    )
 
     return estimateWeakenOffsetForGrow(ns, growThreads)
 }
@@ -329,7 +327,7 @@ export function allocateFleetThreadsForScript(
     }
 
     const memCost = getMemCost(ns)
-    const hostnames = getFleetServers(ns).filter(hostname => ns.fileExists(scriptName, hostname))
+    const hostnames = getFleetServers(ns).filter((hostname) => ns.fileExists(scriptName, hostname))
 
     const result = []
 
@@ -357,7 +355,11 @@ export function allocateFleetThreadsForScript(
 /**
  * Executes the allocated ScriptThreadAllocations on the selected hosts, returning a list of process Ids.
  */
-export function executeScriptThreadAllocations(ns: NS, target: string, allocations: ScriptThreadAllocation[]): ProcessId[] {
+export function executeScriptThreadAllocations(
+    ns: NS,
+    target: string,
+    allocations: ScriptThreadAllocation[]
+): ProcessId[] {
     const pids: ProcessId[] = []
 
     for (const allocation of allocations) {
@@ -365,7 +367,10 @@ export function executeScriptThreadAllocations(ns: NS, target: string, allocatio
             allocation.scriptName,
             allocation.hostname,
             { threads: allocation.threads },
-            target, allocation.threads, "--silent", "--once"
+            target,
+            allocation.threads,
+            "--silent",
+            "--once"
         )
 
         if (pid === 0) {

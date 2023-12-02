@@ -1,11 +1,11 @@
 import { NS } from "@ns"
-import { formatMs, formatNumber, getPrintFunc, getTargetedScriptArgs, shouldRunOnlyOnce, } from "/lib/util"
+import { formatMs, formatNumber, getPrintFunc, getTargetedScriptArgs, shouldRunOnlyOnce } from "/lib/util"
 
 /**
  * Runs hack() on a target server.
  */
 export async function main(ns: NS): Promise<void> {
-    const args = getTargetedScriptArgs(ns)
+    const args = getTargetedScriptArgs(ns, false)
     const print = getPrintFunc(ns)
 
     while (true) {
