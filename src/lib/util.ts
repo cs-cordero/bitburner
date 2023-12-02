@@ -61,54 +61,8 @@ export function exhaustiveCheck(x: never): never {
 }
 
 /**
- * Rounds a number to the nearest billion, million, or thousand, with two decimals and adding
- * the appropriate suffix (if any): b, m, k.
- */
-export function formatNumber(x: number, includeDollar?: boolean): string {
-    const QUADRILLION = 1_000_000_000_000_000
-    const TRILLION = 1_000_000_000_000
-    const BILLION = 1_000_000_000
-    const MILLION = 1_000_000
-    const THOUSAND = 1_000
-
-    let rounded_number: number
-    let suffix: string
-
-    if (x >= QUADRILLION) {
-        rounded_number = Math.round((x / QUADRILLION) * 100) / 100
-        suffix = "t"
-    } else if (x >= TRILLION) {
-        rounded_number = Math.round((x / TRILLION) * 100) / 100
-        suffix = "t"
-    } else if (x >= BILLION) {
-        rounded_number = Math.round((x / BILLION) * 100) / 100
-        suffix = "b"
-    } else if (x >= MILLION) {
-        rounded_number = Math.round((x / MILLION) * 100) / 100
-        suffix = "m"
-    } else if (x >= THOUSAND) {
-        rounded_number = Math.round((x / THOUSAND) * 100) / 100
-        suffix = "k"
-    } else {
-        rounded_number = Math.round(x * 100) / 100
-        suffix = ""
-    }
-
-    const prefix = includeDollar ?? true ? "$" : ""
-
-    return `${prefix}${rounded_number.toFixed(2)}${suffix}`
-}
-
-/**
- * Given a percentage figure, typically between 0 to 100, rounds it to have 1 decimal point.
- * In other words, 74.3 percent should be provided to this function as 74.3, NOT 0.743.
- */
-export function formatPct(x: number): string {
-    return (Math.round(x * 10) / 10).toFixed(1)
-}
-
-/**
  * Given a number of milliseconds, transform it into a human readable string.
+ * Uses abbreviations, unlike ns.tFormat.
  */
 export function formatMs(x: number): string {
     let seconds = Math.floor(x / 1000)

@@ -1,5 +1,5 @@
 import { NS } from "@ns"
-import { formatMs, getTargetableServers, round } from "/lib/util"
+import { formatMs, getTargetableServers } from "/lib/util"
 
 /**
  * Provides information on the grow, weaken, and hack times for every pwned server.
@@ -20,7 +20,7 @@ export async function main(ns: NS): Promise<void> {
                 hackTime,
                 growTime: formatMs(growTime),
                 weakenTime,
-                growthMetric: round(((growth / (growTime / 1000)) * maxMoney) / 1_000_000, 1),
+                growthMetric: ns.formatNumber(((growth / (growTime / 1000)) * maxMoney) / 1_000_000, 1),
             }
         })
 
@@ -31,18 +31,19 @@ export async function main(ns: NS): Promise<void> {
         const weakenPad = data.reduce((a, b) => Math.max(a, b.weakenTime.length), 0)
         const growthPad = data.reduce((a, b) => Math.max(a, b.growthMetric.toString().length), 0)
 
+        const headerStart = "".padStart(serverPad)
+        const headerHack = "HACK".padStart(hackPad)
+        const headerWeaken = "WEAKEN".padStart(hackPad)
+        const headerGrow = "GROW".padStart(growPad)
+
         ns.clearLog()
-        ns.print(
-            `${"".padStart(serverPad)} ${"HACK".padStart(hackPad)} ${"WEAKEN".padStart(hackPad)} ${"GROW".padStart(
-                growPad
-            )}`
-        )
+        ns.print(`${headerStart} ${headerHack} ${headerWeaken} ${headerGrow}`)
         for (const datum of data) {
             const server = datum.server.padEnd(serverPad)
             const h = datum.hackTime.padStart(hackPad)
             const g = datum.growTime.padStart(growPad)
             const w = datum.weakenTime.padStart(weakenPad)
-            const m = datum.growthMetric.toString().padEnd(growthPad)
+            const m = datum.growthMetric.toString().padStart(growthPad)
 
             ns.print(`${server} ${h} ${w} ${g} (${m})`)
         }

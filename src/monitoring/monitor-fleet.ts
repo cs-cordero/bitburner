@@ -1,5 +1,5 @@
 import { NS } from "@ns"
-import { formatNumber, formatPct, getTargetableServers } from "/lib/util"
+import { getTargetableServers } from "/lib/util"
 import { countIncomingThreads } from "/lib/threads"
 
 /**
@@ -11,7 +11,7 @@ export async function main(ns: NS): Promise<void> {
     while (true) {
         const targetToThreadCount = countIncomingThreads(ns)
 
-        let data = getTargetableServers(ns).map((hostname) => {
+        const data = getTargetableServers(ns).map((hostname) => {
             const moneyCurr = ns.getServerMoneyAvailable(hostname)
             const moneyMax = ns.getServerMaxMoney(hostname)
             const securityLevel = ns.getServerSecurityLevel(hostname)
@@ -19,11 +19,11 @@ export async function main(ns: NS): Promise<void> {
             const chance = ns.hackAnalyzeChance(hostname)
 
             const server = `${hostname}:`
-            const availableMoney = formatNumber(moneyCurr)
-            const maxMoney = formatNumber(moneyMax)
-            const pctMoney = `(${formatPct((moneyCurr / moneyMax) * 100)}%)`
-            const securityDelta = `+${formatNumber(Math.max(0, securityLevel - minSecurityLevel), false)}`
-            const hackChance = `${formatPct(chance * 100)}%`
+            const availableMoney = ns.formatNumber(moneyCurr, 1)
+            const maxMoney = ns.formatNumber(moneyMax, 1)
+            const pctMoney = moneyMax === 0 ? "N/A " : `(${ns.formatNumber((moneyCurr / moneyMax) * 100, 0)}%)`
+            const securityDelta = `+${ns.formatNumber(Math.max(0, securityLevel - minSecurityLevel), 2)}`
+            const hackChance = `${ns.formatNumber(chance * 100, 0)}%`
 
             return {
                 server,
