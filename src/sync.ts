@@ -13,7 +13,7 @@ export async function main(ns: NS): Promise<void> {
             const homeFiles = ns.ls("home").filter((fileName) => fileName.endsWith(".js"))
             ns.scp(homeFiles, pwndServer)
 
-            // remove files that dont exist on home
+            // remove files that don't exist on home
             ns.ls(pwndServer)
                 .filter((fileName) => !homeFiles.includes(fileName))
                 .filter((fileName) => fileName.endsWith(".js"))

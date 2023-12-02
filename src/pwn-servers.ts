@@ -1,19 +1,20 @@
 import { NS } from "@ns"
-import { getAllServers, getPrintFunc, getScanScriptArgs } from "/lib/util"
+import { getAllServers, getMultiTargetArgs, getPrintFunc } from "/lib/util"
 
 /**
  * Runs NUKE.exe on any servers for which we can pwn.
  */
 export async function main(ns: NS): Promise<void> {
-    const print = getPrintFunc(ns)
+    const args = getMultiTargetArgs(ns)
+    const print = getPrintFunc(ns, args.silent)
 
-    const programs = getVulnerabilityPrograms(ns)
-    const hostnames = getScanScriptArgs(ns).targets ?? getNukableHosts(ns)
+    const hostnames = args.targets.length ? args.targets : getNukableHosts(ns)
     if (!hostnames.length) {
         print("We can't NUKE.exe any new servers.")
         return
     }
 
+    const programs = getVulnerabilityPrograms(ns)
     for (const hostname of hostnames) {
         programs.forEach((program) => program(hostname))
         ns.nuke(hostname)
@@ -21,7 +22,7 @@ export async function main(ns: NS): Promise<void> {
     }
 }
 
-export function getNukableHosts(ns: NS) {
+function getNukableHosts(ns: NS) {
     const programs = getVulnerabilityPrograms(ns)
 
     return (

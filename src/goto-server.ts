@@ -1,17 +1,17 @@
 import { NS } from "@ns"
-import { findPathFromHome } from "/scan-hostpath"
-import { getTargetedScriptArgs } from "/lib/util"
+import { connectToServer, getPrintFunc, getTargetedArgumentsOptionalThreads } from "/lib/util"
 
 /**
- * Backdoors specific servers for game progress.
+ * Traverses network topology to reach a target server.
+ * Requires singularity functions to be enabled.
  */
 export async function main(ns: NS): Promise<void> {
-    const args = getTargetedScriptArgs(ns, false)
+    const args = getTargetedArgumentsOptionalThreads(ns)
+    const print = getPrintFunc(ns, args.silent)
 
-    ns.tprint(`Connecting to ${args.target} from home`)
-    ns.singularity.connect("home")
-    for (const server of findPathFromHome(ns, args.target)) {
-        ns.singularity.connect(server)
-    }
-    ns.tprint("Done")
+    // early test to check that singularity functions are enabled.
+    ns.singularity.connect(ns.getHostname())
+
+    print(`Connecting to ${args.target}`)
+    connectToServer(ns, args.target)
 }

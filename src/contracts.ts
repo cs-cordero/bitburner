@@ -11,7 +11,7 @@ import { encryptionICaesarCipher } from "/contracts/contract-encryption-i-caesar
 import { encryptionIIVigenereCypher } from "/contracts/contract-encryption-ii-vigenere"
 import { findLargestPrimeFactor } from "/contracts/contract-find-largest-prime-factor"
 import { findValidMath } from "/contracts/contract-find-valid-math"
-import { getAllServers, getPrintFunc, shouldRunOnlyOnce } from "/lib/util"
+import { getAllServers, getFlagOnlyArgs, getPrintFunc } from "/lib/util"
 import { hammingCodesEncodedToInteger } from "/contracts/contract-hammingcodes-encoded-to-integer"
 import { hammingCodesIntegerToEncoded } from "/contracts/contract-hammingcodes-integer-to-encoded"
 import { mergeOverlappingIntervals } from "/contracts/contract-merge-overlapping-intervals"
@@ -64,7 +64,25 @@ const CONTRACT_TYPE_TO_SCRIPT: {
  * Executes solvers for contracts across every server across the entire game.
  */
 export async function main(ns: NS): Promise<void> {
-    const print = getPrintFunc(ns)
+    const args = getFlagOnlyArgs(ns)
+    const print = getPrintFunc(ns, args.silent)
+
+    if (args.check) {
+        const contracts = getAllServers(ns).flatMap((hostname) => {
+            return ns
+                .ls(hostname)
+                .filter((fn) => fn.endsWith(".cct"))
+                .map(contract => `${hostname}: ${contract}`)
+        })
+        if (contracts.length) {
+            print(`Found ${contracts.length} contracts to complete.`)
+            contracts.forEach(contract => print(`  ${contract}`))
+            return
+        } else {
+            print("No contracts on any server!")
+            return
+        }
+    }
 
     while (true) {
         const contractsToServer = getAllServers(ns).flatMap((hostname) =>
@@ -75,7 +93,6 @@ export async function main(ns: NS): Promise<void> {
         )
 
         if (!contractsToServer.length) {
-            print("No contracts to work on!")
             await ns.sleep(10000)
             continue
         }
@@ -85,34 +102,22 @@ export async function main(ns: NS): Promise<void> {
             const input = ns.codingcontract.getData(contract, server)
             const solver = CONTRACT_TYPE_TO_SCRIPT[contractType]
 
-            if (solver !== undefined) {
-                const answer = solver(ns, input)
-
-                if (ns.args.includes("--submit")) {
-                    const result = ns.codingcontract.attempt(answer, contract, server)
-                    if (result === "") {
-                        print(`Attempt with ${answer} failed. (${contractType})`)
-                    } else {
-                        print(`Successful contract execution on ${contract}@${server}: ${result}`)
-                    }
-                } else {
-                    print(`  ${contract}@${server}`)
-                    print(`    Type: ${contractType}`)
-                    print(`    Answer: ${answer}`)
-                    print(`    Input: ${input}`)
-                    print(`    Attempts Remaining: ${ns.codingcontract.getNumTriesRemaining(contract, server)}`)
-                }
-            } else {
-                print(`${contract}@${server}: New contract type: "${contractType}"`)
-                if (ns.args.includes("--show")) {
-                    print(ns.codingcontract.getDescription(contract, server))
-                    print(ns.codingcontract.getData(contract, server))
-                }
+            if (solver === undefined) {
+                throw new Error(`${contract}@${server}: Unknown contract type: "${contractType}`)
             }
+
+            const answer = solver(ns, input)
+            const result = ns.codingcontract.attempt(answer, contract, server)
+            if (result === "") {
+                print(`Attempt with ${answer} failed. (${contractType})`)
+            } else {
+                print(`Successful contract execution on ${contract}@${server}: ${result}`)
+            }
+
             await ns.sleep(5000)
         }
 
-        if (shouldRunOnlyOnce(ns)) {
+        if (args.once) {
             break
         }
 

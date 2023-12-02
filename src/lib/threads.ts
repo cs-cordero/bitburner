@@ -1,5 +1,5 @@
 import { NS } from "@ns"
-import { formulasApiActive, getAllServers, getFleetServers, getPwndServers, ProcessId } from "/lib/util"
+import { formulasApiActive, getAllServers, getFleetServers, getPwndServers, Process } from "/lib/util"
 
 const CANONICAL_SCRIPT_LOCATION = "home"
 
@@ -359,8 +359,8 @@ export function executeScriptThreadAllocations(
     ns: NS,
     target: string,
     allocations: ScriptThreadAllocation[]
-): ProcessId[] {
-    const pids: ProcessId[] = []
+): Process[] {
+    const processes: Process[] = []
 
     for (const allocation of allocations) {
         const pid = ns.exec(
@@ -378,8 +378,13 @@ export function executeScriptThreadAllocations(
             continue
         }
 
-        pids.push(pid)
+        processes.push({
+            hostname: allocation.hostname,
+            threads: allocation.threads,
+            pid,
+            target,
+        })
     }
 
-    return pids
+    return processes
 }

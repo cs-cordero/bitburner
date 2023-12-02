@@ -1,11 +1,12 @@
 import { NS } from "@ns"
-import { getPrintFunc, getPwndServers } from "/lib/util"
+import { getFlagOnlyArgs, getPrintFunc, getPwndServers } from "/lib/util"
 
 /**
  * Orders all pwnd servers to killall processes.  This excludes "home".
  */
 export async function main(ns: NS): Promise<void> {
-    const print = getPrintFunc(ns)
+    const args = getFlagOnlyArgs(ns)
+    const print = getPrintFunc(ns, args.silent)
 
     print("Running killall on all pwnd servers")
 

@@ -1,12 +1,10 @@
 import { NS } from "@ns"
-import { getPrintFunc, getTargetedScriptArgs, waitUntilPidFinishes } from "/lib/util"
+import { getPrintFunc, getTargetedArguments, waitUntilPidFinishes } from "/lib/util"
 import { estimateGrowWeakenDistribution, estimateHackWeakenDistribution } from "/lib/threads"
 
 export async function main(ns: NS): Promise<void> {
-    const print = getPrintFunc(ns)
-    const args = getTargetedScriptArgs(ns)
-
-    const totalThreads = args.threads ?? 4400
+    const args = getTargetedArguments(ns)
+    const print = getPrintFunc(ns, args.silent)
 
     let cycle = 1
     while (true) {
@@ -14,9 +12,9 @@ export async function main(ns: NS): Promise<void> {
             print(`sapping ${args.target}, cycle ${cycle++}`)
             const weakenPid = ns.run(
                 "weaken.js",
-                { threads: totalThreads },
+                { threads: args.threads },
                 args.target,
-                totalThreads,
+                args.threads,
                 "--silent",
                 "--once"
             )
@@ -25,7 +23,7 @@ export async function main(ns: NS): Promise<void> {
 
         while (ns.getServerMoneyAvailable(args.target) < ns.getServerMaxMoney(args.target)) {
             print(`farming ${args.target}, cycle ${cycle++}`)
-            const threadDistribution = estimateGrowWeakenDistribution(ns, totalThreads)
+            const threadDistribution = estimateGrowWeakenDistribution(ns, args.threads)
             const growPid = ns.run(
                 "grow.js",
                 { threads: threadDistribution.growThreads },
@@ -48,7 +46,7 @@ export async function main(ns: NS): Promise<void> {
         }
 
         print(`harvesting ${args.target}, cycle ${cycle++}`)
-        const threadDistribution = estimateHackWeakenDistribution(ns, totalThreads)
+        const threadDistribution = estimateHackWeakenDistribution(ns, args.threads)
         const hackPid = ns.run(
             "hack.js",
             { threads: threadDistribution.hackThreads },

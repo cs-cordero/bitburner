@@ -10,7 +10,6 @@ export function subarrayWithMaximumSum(ns: NS, input: any): string {
         return "0"
     }
 
-    ns.tprint(numbers)
     let maxSum = -Infinity
     let currentSum = -Infinity
     for (const number of numbers) {

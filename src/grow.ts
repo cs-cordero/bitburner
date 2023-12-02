@@ -1,20 +1,24 @@
 import { NS } from "@ns"
-import { formatMs, getPrintFunc, getTargetedScriptArgs, round, shouldRunOnlyOnce } from "/lib/util"
+import { getPrintFunc, getTargetedArgumentsOptionalThreads } from "/lib/util"
 
 /**
  * Runs grow() on a target server.
  */
 export async function main(ns: NS): Promise<void> {
-    const args = getTargetedScriptArgs(ns, false)
-    const print = getPrintFunc(ns)
+    const args = getTargetedArgumentsOptionalThreads(ns)
+    const print = getPrintFunc(ns, args.silent)
 
+    const sourceHost = ns.getHostname()
+    const targetHost = args.target
+    const threads = args.threads ?? 1
     while (true) {
-        const growTime = formatMs(ns.getGrowTime(args.target))
-        print(`[${ns.getHostname()}] Expected grow time ${growTime}.`)
-        const growth = await ns.grow(args.target, { threads: args.threads })
-        print(`[${ns.getHostname()}] Grow completed on ${args.target} with effective increase of ${round(growth, 3)}x.`)
+        const growTime = ns.tFormat(ns.getGrowTime(targetHost))
+        print(`[${sourceHost}] Expected grow time ${growTime}.`)
 
-        if (shouldRunOnlyOnce(ns)) {
+        const growth = await ns.grow(targetHost, { threads })
+        print(`[${sourceHost}] Grew ${targetHost} with effective increase of ${ns.formatNumber(growth, 3)}x.`)
+
+        if (args.once) {
             break
         }
     }

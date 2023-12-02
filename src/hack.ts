@@ -1,20 +1,24 @@
 import { NS } from "@ns"
-import { formatMs, formatNumber, getPrintFunc, getTargetedScriptArgs, shouldRunOnlyOnce } from "/lib/util"
+import { getPrintFunc, getTargetedArgumentsOptionalThreads } from "/lib/util"
 
 /**
  * Runs hack() on a target server.
  */
 export async function main(ns: NS): Promise<void> {
-    const args = getTargetedScriptArgs(ns, false)
-    const print = getPrintFunc(ns)
+    const args = getTargetedArgumentsOptionalThreads(ns)
+    const print = getPrintFunc(ns, args.silent)
 
+    const sourceHost = ns.getHostname()
+    const targetHost = args.target
+    const threads = args.threads ?? 1
     while (true) {
-        const hackTime = formatMs(ns.getHackTime(args.target))
-        print(`[${ns.getHostname()}] Expected hack time ${hackTime}.`)
-        const money = await ns.hack(args.target, { threads: args.threads })
-        print(`[${ns.getHostname()}] Hacked ${args.target} and acquired ${formatNumber(money)}.`)
+        const hackTime = ns.tFormat(ns.getHackTime(targetHost))
+        print(`[${sourceHost}] Expected hack time ${hackTime}.`)
 
-        if (shouldRunOnlyOnce(ns)) {
+        const money = await ns.hack(targetHost, { threads })
+        print(`[${sourceHost}] Hacked ${targetHost} and acquired $${ns.formatNumber(money)}.`)
+
+        if (args.once) {
             break
         }
     }

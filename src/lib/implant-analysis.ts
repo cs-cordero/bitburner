@@ -1,5 +1,5 @@
 import { Multipliers, NS } from "@ns"
-import { getPrintFunc } from "/lib/util"
+import { getFlagOnlyArgs, getPrintFunc } from "/lib/util"
 
 export interface Implant {
     name: string
@@ -101,7 +101,8 @@ const ALL_EXP_SKILLS = [
 ]
 
 export async function main(ns: NS): Promise<void> {
-    const print = getPrintFunc(ns)
+    const args = getFlagOnlyArgs(ns)
+    const print = getPrintFunc(ns, args.silent)
     const factionToImplants = getImplantsFromFactions(ns)
 
     for (const [faction, implants] of Object.entries(factionToImplants)) {
@@ -124,7 +125,7 @@ export function getImplantsFromFactions(ns: NS): { [faction: string]: Implant[] 
     const result: { [faction: string]: Implant[] } = {}
 
     for (const faction of FACTIONS) {
-        const implants: Implant[] = ns.singularity
+        result[faction] = ns.singularity
             .getAugmentationsFromFaction(faction)
             .filter((implant) => implant !== NEUROFLUX_GENERATOR)
             .map((implant) => {
@@ -154,8 +155,6 @@ export function getImplantsFromFactions(ns: NS): { [faction: string]: Implant[] 
                     return a.rep - b.rep
                 }
             })
-
-        result[faction] = implants
     }
 
     return result
