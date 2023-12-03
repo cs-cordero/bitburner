@@ -11,6 +11,12 @@ export async function main(ns: NS): Promise<void> {
     const hostnames = args.targets.length ? args.targets : getNukableHosts(ns)
     if (!hostnames.length) {
         print("We can't NUKE.exe any new servers.")
+        const remaining = getAllServers(ns).filter(hostname => !ns.hasRootAccess(hostname)).length
+        if (remaining === 0) {
+            print(`...and so he wept, for there were no more worlds left to conquer.`)
+        } else {
+            print(`${remaining} remaining hosts to nuke in the network.`)
+        }
         return
     }
 

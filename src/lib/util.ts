@@ -6,6 +6,16 @@ import { NS } from "@ns"
 export const PURCHASED_SERVER_PREFIX = "fleet"
 
 /**
+ * Scripts that get started by start.js and won't be killed by die.js
+ */
+export const EVERGREEN_SCRIPTS = [
+    "monitoring/monitor-home.js",
+    "monitoring/monitor-fleet.js",
+    "contracts.js",
+    "sync.js"
+]
+
+/**
  * Type guard for string
  */
 export function isString(x: unknown): x is string {
@@ -80,28 +90,101 @@ export function formatMs(x: number): string {
     }
 }
 
-/**
- * Rounds a number to some number of decimal points.
- * Note that it doesn't force any trailing 0s, if you want to print this somewhere, you'll
- * want to use .toFixed(n).
- */
-export function round(x: number, decimalPoints: number): number {
-    const adjustment = Math.pow(10, decimalPoints)
-    return Math.round(x * adjustment) / adjustment
+export function numberWithCommas(x: number) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PrintFunc = (msg: any) => void
 
 /**
  * Returns a function that can be used for printing.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function getPrintFunc(ns: NS, shouldBeSilent: boolean): (arg: any) => void {
+export function getPrintFunc(ns: NS, shouldBeSilent: boolean): PrintFunc {
+    ns.disableLog("disableLog")
+    ns.disableLog("sleep")
+    ns.disableLog("scan")
+    ns.disableLog("getServerUsedRam")
+    ns.disableLog("getServerMaxRam")
+    ns.disableLog("getServerMinSecurityLevel")
+    ns.disableLog("getServerSecurityLevel")
+
     return shouldBeSilent
         ? ns.print
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        : (msg: any) => {
+        : (msg) => {
               ns.tprint(msg)
               ns.print(msg)
           }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export enum AlignDirection {
+    Left,
+    Center,
+    Right
+}
+
+export interface Column {
+    displayName: string
+    alignment?: AlignDirection
+}
+
+export function printTable<FieldName extends string>(
+    records: Record<FieldName, string>[],
+    headers: [FieldName, Column][],
+    printFn: PrintFunc
+) {
+    const fieldNameToPadSize: { [key in FieldName]?: number} = {}
+
+    for (const record of records) {
+        for (const entry of Object.entries(record)) {
+            const [fieldName, value] = entry as [FieldName, string]
+            fieldNameToPadSize[fieldName] = Math.max(fieldNameToPadSize[fieldName] ?? 0, value.length)
+        }
+    }
+    for (const [fieldName, column] of headers) {
+        fieldNameToPadSize[fieldName] = Math.max(fieldNameToPadSize[fieldName] ?? 0, column.displayName.length)
+    }
+
+    const serializedRows = records
+        .map(record => {
+            const columnStrings: string[] = []
+            for (const [fieldName, column] of headers) {
+                if (column.alignment === AlignDirection.Left) {
+                    columnStrings.push((record[fieldName] ?? "").padEnd(fieldNameToPadSize[fieldName] ?? 0))
+                } else if (column.alignment === AlignDirection.Center) {
+                    const value = record[fieldName] ?? ""
+                    const totalWidth = fieldNameToPadSize[fieldName] ?? 0
+                    const totalPad = totalWidth - value.length
+                    const leftPad = Math.floor(totalPad / 2)
+
+                    columnStrings.push(value.padStart(leftPad + value.length).padEnd(totalWidth))
+                } else {
+                    columnStrings.push((record[fieldName] ?? "").padStart(fieldNameToPadSize[fieldName] ?? 0))
+                }
+            }
+            return `|${columnStrings.join("|")}|`
+        })
+
+    const headerRow = "|" + headers
+        .map(([fieldName, column]) => {
+            const value = column.displayName
+            const totalWidth = fieldNameToPadSize[fieldName] ?? 0
+            const totalPad = totalWidth - value.length
+            const leftPad = Math.floor(totalPad / 2)
+
+            return value.padStart(leftPad + value.length).padEnd(totalWidth)
+        })
+        .join("|") + "|"
+    const headerBar = "=".repeat(headerRow.length)
+
+    printFn(headerBar)
+    printFn(headerRow)
+    printFn(headerBar)
+    serializedRows.forEach(row => printFn(row))
+    printFn(headerBar)
+    printFn(`${serializedRows.length} total rows`)
+    printFn(headerBar)
 }
 
 /********************************************************************************************************************/

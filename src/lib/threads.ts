@@ -1,5 +1,5 @@
 import { NS } from "@ns"
-import { formulasApiActive, getAllServers, getFleetServers, getPwndServers, Process } from "/lib/util"
+import { assertIsNumber, formulasApiActive, getAllServers, getFleetServers, getPwndServers, Process } from "/lib/util"
 
 const CANONICAL_SCRIPT_LOCATION = "home"
 
@@ -10,7 +10,7 @@ const CANONICAL_SCRIPT_LOCATION = "home"
 /**
  * Describes a manifest of thread counts either on the fleet or on home.
  */
-interface ThreadManifest {
+export interface ThreadManifest {
     manifestType: "FLEET" | "HOME"
     max: number
     free: number
@@ -19,6 +19,18 @@ interface ThreadManifest {
     hack: number
     share: number
     other: number
+    fleetFarm?: number
+    farm?: number
+}
+
+export interface FleetThreadManifest extends ThreadManifest {
+    manifestType: "FLEET"
+}
+
+export interface HomeThreadManifest extends ThreadManifest {
+    manifestType: "HOME"
+    farm: number
+    fleetFarm: number
 }
 
 /**
@@ -46,9 +58,11 @@ export function getMemCost(ns: NS): number {
 /**
  * Get the thread manifest from the home server.
  */
-export function getHomeThreadManifest(ns: NS): ThreadManifest {
+export function getHomeThreadManifest(ns: NS): HomeThreadManifest {
     return {
         manifestType: "HOME",
+        fleetFarm: 0,
+        farm: 0,
         ...getThreadManifest(ns, ["home"]),
     }
 }
@@ -56,7 +70,7 @@ export function getHomeThreadManifest(ns: NS): ThreadManifest {
 /**
  * Get the thread manifest from across the fleet (rooted non-home servers).
  */
-export function getFleetThreadManifest(ns: NS): ThreadManifest {
+export function getFleetThreadManifest(ns: NS): FleetThreadManifest {
     return {
         manifestType: "FLEET",
         ...getThreadManifest(ns),
@@ -77,6 +91,8 @@ function getThreadManifest(ns: NS, hosts?: string[]): Omit<ThreadManifest, "mani
     let grow = 0
     let share = 0
     let other = 0
+    let fleetFarm = 0
+    let farm = 0
     for (const pwndServer of servers) {
         const maxRam = ns.getServerMaxRam(pwndServer)
         const usedRam = ns.getServerUsedRam(pwndServer)
@@ -96,10 +112,25 @@ function getThreadManifest(ns: NS, hosts?: string[]): Omit<ThreadManifest, "mani
             } else {
                 other += proc.threads
             }
+            if (proc.filename === "fleet-farm.js") {
+                assertIsNumber(proc.args[1])
+                fleetFarm += proc.args[1] as number
+            } else if (proc.filename === "farm.js") {
+                assertIsNumber(proc.args[1])
+                farm += proc.args[1] as number
+            }
         }
     }
 
-    return { max, free, weaken, grow, hack, share, other }
+    const result: Omit<ThreadManifest, "manifestType"> = { max, free, weaken, grow, hack, share, other }
+    if (fleetFarm) {
+        result.fleetFarm = fleetFarm
+    }
+    if (farm) {
+        result.farm = farm
+    }
+
+    return result
 }
 
 /**
@@ -227,8 +258,9 @@ export function estimateGrowWeakenDistributionSmart(ns: NS, target: string): Gro
         throw new Error("Smart functions require that the Formulas API be accessible")
     }
 
+    const server = ns.getServer(target)
     const growThreads = Math.ceil(
-        ns.formulas.hacking.growThreads(ns.getServer(target), ns.getPlayer(), ns.getServerMaxMoney(target), 1)
+        ns.formulas.hacking.growThreads(server, ns.getPlayer(), server.moneyMax!, 1)
     )
 
     return estimateWeakenOffsetForGrow(ns, growThreads)
@@ -272,6 +304,7 @@ export function estimateHackWeakenDistribution(ns: NS, totalThreads: number) {
 
 /**
  * Like {@link estimateHackWeakenDistribution}, but empowered with the Formulas API.
+ * Should leave the server with a minimized, but non-zero amount of money.
  *
  * Hack threads increase security level by 0.002.
  * Weaken threads decrease security level by 0.05.
@@ -282,7 +315,7 @@ export function estimateHackWeakenDistributionSmart(ns: NS, target: string): Hac
     }
 
     const hackPercent = ns.formulas.hacking.hackPercent(ns.getServer(target), ns.getPlayer())
-    const hackThreads = Math.ceil(1 / hackPercent)
+    const hackThreads = Math.max(Math.ceil(1 / hackPercent) - 1, 0)
 
     return estimateWeakenOffsetForHack(ns, hackThreads)
 }

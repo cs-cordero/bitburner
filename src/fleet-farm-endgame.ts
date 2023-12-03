@@ -1,17 +1,27 @@
 import { NS } from "@ns"
-import { formulasApiActive, getTargetableServers } from "/lib/util"
+import {
+    formulasApiActive,
+    getPrintFunc,
+    getTargetableServers,
+    parseArguments,
+    PositionalArgType,
+    ScriptArguments,
+    ScriptArgumentsSpec
+} from "/lib/util"
 import { getFleetThreadManifest } from "/lib/threads"
 
 export async function main(ns: NS): Promise<void> {
+    const args = getArgs(ns)
+    const print = getPrintFunc(ns, args.silent)
+
     const fleetThreads = getFleetThreadManifest(ns)
-    const maxServersToFarm = Math.floor(fleetThreads.max / 4400)
+    const maxServersToFarm = Math.floor(fleetThreads.max / args.threads)
     if (maxServersToFarm === 0) {
-        ns.tprint("Not enough fleet threads to farm.")
+        print("Not enough fleet threads to farm.")
         return
     }
 
     const servers = getTargetableServers(ns)
-        .sort((a, b) => ns.getServerMaxMoney(b) - ns.getServerMaxMoney(a))
         .filter((server) => ns.getServerMaxMoney(server) > 0)
         .filter((server) => {
             if (formulasApiActive(ns)) {
@@ -23,9 +33,33 @@ export async function main(ns: NS): Promise<void> {
                 return true
             }
         })
+        .sort((a, b) => ns.getServerMaxMoney(b) - ns.getServerMaxMoney(a))
         .slice(0, maxServersToFarm)
 
     for (const server of servers) {
-        ns.run("fleet-farm.js", undefined, server, "--silent")
+        ns.run("fleet-farm.js", undefined, server, args.threads, "--silent")
     }
+}
+
+type ArgumentNames = "threads" | "silent"
+const ArgsSpec: ScriptArgumentsSpec<ArgumentNames> = {
+    threads: {
+        type: "POSITIONAL",
+        argType: PositionalArgType.Number,
+        position: 0,
+        optional: false,
+    },
+    silent: { type: "FLAG" },
+}
+interface Args extends ScriptArguments<ArgumentNames> {
+    threads: number
+    silent: boolean
+}
+function getArgs(ns: NS): Args {
+    return parseArguments<
+        ArgumentNames,
+        never,
+        typeof ArgsSpec,
+        Args
+    >(ns, ArgsSpec)
 }

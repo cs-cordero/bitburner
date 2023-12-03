@@ -86,7 +86,7 @@ type Required = "silent" | "check" | "hacknet" | "partial"
 type Optional = "ram"
 type ArgumentNames = Required & Optional
 const ArgsSpec: ScriptArgumentsSpec<ArgumentNames> = {
-    targets: {
+    ram: {
         type: "POSITIONAL",
         position: 0,
         argType: PositionalArgType.Number,
